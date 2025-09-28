@@ -9,9 +9,9 @@ export function middleware(request: NextRequest) {
     const authValue = basicAuth.split(' ')[1]
     const [user, pwd] = atob(authValue).split(':')
 
-    // Your login credentials
+    // Your login credentials - Change these to your preferred values
     const validUser = 'admin'
-    const validPassword = 'SecureFinance2025!'
+    const validPassword = 'MyNewPassword123!'
 
     if (user === validUser && pwd === validPassword) {
       return NextResponse.next()
