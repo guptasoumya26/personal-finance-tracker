@@ -84,7 +84,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Prevent admin from deleting themselves
-    if (currentUser.id === userId) {
+    if ('id' in currentUser && currentUser.id === userId) {
       return NextResponse.json(
         { error: 'Cannot delete your own account' },
         { status: 400 }
@@ -139,7 +139,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Prevent admin from deactivating themselves
-    if (currentUser.id === userId && status === 'inactive') {
+    if ('id' in currentUser && currentUser.id === userId && status === 'inactive') {
       return NextResponse.json(
         { error: 'Cannot deactivate your own account' },
         { status: 400 }
