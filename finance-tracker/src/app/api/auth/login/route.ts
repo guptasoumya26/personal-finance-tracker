@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
           username: user.username,
           email: user.email,
           role: user.role
+          // password_hash excluded for security
         }
       });
     }

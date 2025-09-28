@@ -50,6 +50,7 @@ export async function GET(request: NextRequest) {
       status: user.status,
       created_at: user.created_at,
       last_login: user.last_login
+      // password_hash excluded for security
     }));
 
     return NextResponse.json({ users: sanitizedUsers });
