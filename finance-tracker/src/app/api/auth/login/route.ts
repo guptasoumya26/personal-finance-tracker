@@ -1,27 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { AuthService } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
     const { username, password } = await request.json();
 
-    // Get credentials from environment variables
-    const validUsername = process.env.AUTH_USERNAME;
-    const validPassword = process.env.AUTH_PASSWORD;
-
-    if (!validUsername || !validPassword) {
+    if (!username || !password) {
       return NextResponse.json(
-        { error: 'Authentication not configured' },
-        { status: 500 }
+        { error: 'Username and password are required' },
+        { status: 400 }
       );
     }
 
-    // Verify credentials
-    if (username === validUsername && password === validPassword) {
-      // Create a simple session token (in production, use JWT or proper session management)
+    // Try database authentication first
+    const { user, token, error } = await AuthService.authenticateUser(username, password);
+
+    if (user && token) {
+      // Set JWT token as HTTP-only cookie
+      const cookieStore = await cookies();
+      cookieStore.set('auth-token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 24 * 60 * 60, // 24 hours
+        path: '/'
+      });
+
+      return NextResponse.json({
+        success: true,
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          role: user.role
+        }
+      });
+    }
+
+    // Fallback to legacy environment variable authentication for backward compatibility
+    const legacyUsername = process.env.AUTH_USERNAME;
+    const legacyPassword = process.env.AUTH_PASSWORD;
+
+    if (legacyUsername && legacyPassword && username === legacyUsername && password === legacyPassword) {
+      // Create a simple session token for legacy auth
       const sessionToken = Buffer.from(`${username}:${Date.now()}`).toString('base64');
 
-      // Set HTTP-only cookie
       const cookieStore = await cookies();
       cookieStore.set('auth-token', sessionToken, {
         httpOnly: true,
@@ -31,11 +55,18 @@ export async function POST(request: NextRequest) {
         path: '/'
       });
 
-      return NextResponse.json({ success: true });
+      return NextResponse.json({
+        success: true,
+        user: {
+          username: legacyUsername,
+          role: 'admin',
+          legacy: true
+        }
+      });
     }
 
     return NextResponse.json(
-      { error: 'Invalid credentials' },
+      { error: error || 'Invalid credentials' },
       { status: 401 }
     );
   } catch (error) {

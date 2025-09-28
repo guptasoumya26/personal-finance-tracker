@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Lock, User } from 'lucide-react';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import Link from 'next/link';
 
 export default function LoginPage() {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
@@ -120,8 +121,14 @@ export default function LoginPage() {
         </form>
 
         {/* Footer */}
-        <div className="text-center text-sm text-gray-400">
-          <p>Secure access to your personal finance data</p>
+        <div className="text-center">
+          <p className="text-sm text-gray-400 mb-2">Secure access to your personal finance data</p>
+          <p className="text-sm text-gray-400">
+            Don't have an account?{' '}
+            <Link href="/signup" className="text-blue-400 hover:text-blue-300 transition-colors">
+              Sign up here
+            </Link>
+          </p>
         </div>
       </div>
     </div>

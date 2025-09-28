@@ -4,6 +4,19 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- Users Table for Authentication
+CREATE TABLE IF NOT EXISTS users (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    username VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(20) NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'user')),
+    status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'pending')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    last_login TIMESTAMP WITH TIME ZONE
+);
+
 -- Central Templates Table
 CREATE TABLE IF NOT EXISTS central_templates (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -43,6 +56,10 @@ CREATE TABLE IF NOT EXISTS notes (
 );
 
 -- Indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+CREATE INDEX IF NOT EXISTS idx_users_status ON users(status);
 CREATE INDEX IF NOT EXISTS idx_expenses_month ON expenses(month);
 CREATE INDEX IF NOT EXISTS idx_expenses_category ON expenses(category);
 CREATE INDEX IF NOT EXISTS idx_expenses_source_type ON expenses(source_type);
@@ -66,11 +83,33 @@ CREATE TRIGGER update_notes_updated_at
     BEFORE UPDATE ON notes
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- RLS (Row Level Security) - Enable if you plan to add authentication later
+CREATE TRIGGER update_users_updated_at
+    BEFORE UPDATE ON users
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- RLS (Row Level Security) - Enable for multi-user data isolation
+-- Note: Run these after setting up your authentication system
+-- ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 -- ALTER TABLE central_templates ENABLE ROW LEVEL SECURITY;
 -- ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
 -- ALTER TABLE investments ENABLE ROW LEVEL SECURITY;
 -- ALTER TABLE notes ENABLE ROW LEVEL SECURITY;
+
+-- Function to enforce user limit (max 5 users)
+CREATE OR REPLACE FUNCTION check_user_limit()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF (SELECT COUNT(*) FROM users WHERE status = 'active') >= 5 THEN
+        RAISE EXCEPTION 'Maximum user limit (5) reached. Cannot create more users.';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger to enforce user limit on insert
+CREATE TRIGGER enforce_user_limit
+    BEFORE INSERT ON users
+    FOR EACH ROW EXECUTE FUNCTION check_user_limit();
 
 -- Sample data (optional - remove if you don't want sample data)
 -- INSERT INTO central_templates (items) VALUES (
