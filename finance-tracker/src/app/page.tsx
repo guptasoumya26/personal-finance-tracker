@@ -8,6 +8,7 @@ import CentralInvestmentTemplateManager from '@/components/CentralInvestmentTemp
 import ExpenseForm from '@/components/ExpenseForm';
 import InvestmentForm from '@/components/InvestmentForm';
 import TrendChart from '@/components/TrendChart';
+import ExpensePieChart from '@/components/ExpensePieChart';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Toast from '@/components/Toast';
 import { Expense, Investment, CentralTemplate, CentralInvestmentTemplate } from '@/types';
@@ -999,6 +1000,14 @@ export default function FinanceTracker() {
                     <p className="text-xs sm:text-sm mt-1">Add templates above or manual expenses</p>
                   </div>
                 )}
+              </div>
+
+              {/* Expense Distribution Pie Chart */}
+              <div className="mb-6">
+                <ExpensePieChart
+                  expenses={currentMonthExpenses}
+                  monthName={formatMonth(currentMonth)}
+                />
               </div>
 
               {/* Expense Trend Chart */}
