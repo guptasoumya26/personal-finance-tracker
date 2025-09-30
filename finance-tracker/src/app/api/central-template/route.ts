@@ -71,7 +71,10 @@ export async function POST(request: NextRequest) {
     }
     console.error('Error saving central template:', error);
     return NextResponse.json(
-      { error: 'Failed to save central template' },
+      {
+        error: 'Failed to save central template',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
@@ -121,7 +124,10 @@ export async function PUT(request: NextRequest) {
     }
     console.error('Error updating central template:', error);
     return NextResponse.json(
-      { error: 'Failed to update central template' },
+      {
+        error: 'Failed to update central template',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
