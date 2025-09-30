@@ -14,7 +14,7 @@ import { formatINR } from '@/utils/currency';
 import * as api from '@/lib/api';
 
 export default function FinanceTracker() {
-  const [currentMonth, setCurrentMonth] = useState(new Date(2025, 9)); // October 2025
+  const [currentMonth, setCurrentMonth] = useState(new Date()); // Current month
   const [centralTemplate, setCentralTemplate] = useState<CentralTemplate | null>(null);
   const [centralInvestmentTemplate, setCentralInvestmentTemplate] = useState<CentralInvestmentTemplate | null>(null);
   const [activeTab, setActiveTab] = useState<'monthly' | 'template' | 'investment-template'>('monthly');
@@ -35,6 +35,28 @@ export default function FinanceTracker() {
 
   const formatMonth = (date: Date) => {
     return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  };
+
+  // Fuzzy matching function - checks if names are similar (5+ characters match)
+  const areNamesSimilar = (name1: string, name2: string): boolean => {
+    const normalize = (str: string) => str.toLowerCase().trim();
+    const n1 = normalize(name1);
+    const n2 = normalize(name2);
+
+    // Exact match
+    if (n1 === n2) return true;
+
+    // Check for substring match of 5+ characters
+    if (n1.length >= 5 && n2.includes(n1)) return true;
+    if (n2.length >= 5 && n1.includes(n2)) return true;
+
+    // Check for common substrings of 5+ characters
+    for (let i = 0; i <= n1.length - 5; i++) {
+      const substring = n1.substring(i, i + 5);
+      if (n2.includes(substring)) return true;
+    }
+
+    return false;
   };
 
   const navigateMonth = (direction: 'prev' | 'next') => {
@@ -262,16 +284,16 @@ export default function FinanceTracker() {
       const skippedItems: string[] = [];
 
       for (const item of centralTemplate.items) {
-        // Additional check: Skip if an expense with the same name already exists for this month
-        const existingExpenseWithSameName = monthlyExpenses.find(exp =>
-          exp.name === item.name &&
+        // Additional check: Skip if an expense with similar name already exists for this month
+        const existingExpenseWithSimilarName = monthlyExpenses.find(exp =>
+          areNamesSimilar(exp.name, item.name) &&
           exp.month.getMonth() === currentMonth.getMonth() &&
           exp.month.getFullYear() === currentMonth.getFullYear()
         );
 
-        if (existingExpenseWithSameName) {
-          console.log(`Skipping duplicate expense: ${item.name}`);
-          skippedItems.push(item.name);
+        if (existingExpenseWithSimilarName) {
+          console.log(`Skipping similar expense: ${item.name} (similar to: ${existingExpenseWithSimilarName.name})`);
+          skippedItems.push(`${item.name} (similar to: ${existingExpenseWithSimilarName.name})`);
           continue;
         }
 
@@ -292,13 +314,18 @@ export default function FinanceTracker() {
       }
 
       // Show user feedback about the operation
+      let message = '';
       if (newExpenses.length === 0 && skippedItems.length > 0) {
-        alert(`All template items already exist for ${formatMonth(currentMonth)}:\n• ${skippedItems.join('\n• ')}`);
+        message = `All template items already exist for ${formatMonth(currentMonth)}:\n• ${skippedItems.join('\n• ')}`;
       } else if (skippedItems.length > 0) {
-        alert(`Template filled successfully!\n\nAdded: ${newExpenses.length} expenses\nSkipped (already exist): ${skippedItems.length} expenses\n• ${skippedItems.join('\n• ')}`);
+        message = `Template filled successfully!\n\nAdded: ${newExpenses.length} expenses\nSkipped (similar items exist): ${skippedItems.length} expenses\n• ${skippedItems.join('\n• ')}`;
       } else {
-        alert(`Successfully added ${newExpenses.length} expenses from template!`);
+        message = `Successfully added ${newExpenses.length} expenses from template!`;
       }
+
+      // Use both alert and console for visibility
+      alert(message);
+      console.log('Template fill result:', message);
 
       // Update local state
       setMonthlyExpenses(prev => [
@@ -352,16 +379,16 @@ export default function FinanceTracker() {
       const skippedItems: string[] = [];
 
       for (const item of centralInvestmentTemplate.items) {
-        // Additional check: Skip if an investment with the same name already exists for this month
-        const existingInvestmentWithSameName = monthlyInvestments.find(inv =>
-          inv.name === item.name &&
+        // Additional check: Skip if an investment with similar name already exists for this month
+        const existingInvestmentWithSimilarName = monthlyInvestments.find(inv =>
+          areNamesSimilar(inv.name, item.name) &&
           inv.month.getMonth() === currentMonth.getMonth() &&
           inv.month.getFullYear() === currentMonth.getFullYear()
         );
 
-        if (existingInvestmentWithSameName) {
-          console.log(`Skipping duplicate investment: ${item.name}`);
-          skippedItems.push(item.name);
+        if (existingInvestmentWithSimilarName) {
+          console.log(`Skipping similar investment: ${item.name} (similar to: ${existingInvestmentWithSimilarName.name})`);
+          skippedItems.push(`${item.name} (similar to: ${existingInvestmentWithSimilarName.name})`);
           continue;
         }
 
@@ -382,13 +409,18 @@ export default function FinanceTracker() {
       }
 
       // Show user feedback about the operation
+      let message = '';
       if (newInvestments.length === 0 && skippedItems.length > 0) {
-        alert(`All template items already exist for ${formatMonth(currentMonth)}:\n• ${skippedItems.join('\n• ')}`);
+        message = `All template items already exist for ${formatMonth(currentMonth)}:\n• ${skippedItems.join('\n• ')}`;
       } else if (skippedItems.length > 0) {
-        alert(`Template filled successfully!\n\nAdded: ${newInvestments.length} investments\nSkipped (already exist): ${skippedItems.length} investments\n• ${skippedItems.join('\n• ')}`);
+        message = `Template filled successfully!\n\nAdded: ${newInvestments.length} investments\nSkipped (similar items exist): ${skippedItems.length} investments\n• ${skippedItems.join('\n• ')}`;
       } else {
-        alert(`Successfully added ${newInvestments.length} investments from template!`);
+        message = `Successfully added ${newInvestments.length} investments from template!`;
       }
+
+      // Use both alert and console for visibility
+      alert(message);
+      console.log('Template fill result:', message);
 
       // Update local state
       setMonthlyInvestments(prev => [
