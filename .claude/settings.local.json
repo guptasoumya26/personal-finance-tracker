@@ -7,7 +7,14 @@
       "Bash(npm run dev:*)",
       "Bash(npm run build:*)",
       "Bash(npx vercel:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(curl:*)",
+      "Bash(git reset:*)",
+      "Bash(openssl rand:*)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": []

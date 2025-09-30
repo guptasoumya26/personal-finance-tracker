@@ -4,7 +4,6 @@
 -- ⚠️ WARNING: This will DROP ALL EXISTING DATA and recreate everything
 -- Uncomment the section below ONLY if you want to completely reset the database
 
-/*
 -- === COMPLETE DATABASE RESET - UNCOMMENT TO USE ===
 -- Drop all existing tables and data
 DROP TABLE IF EXISTS notes CASCADE;
@@ -17,7 +16,6 @@ DROP TABLE IF EXISTS users CASCADE;
 -- Drop all custom functions and triggers
 DROP FUNCTION IF EXISTS update_updated_at_column() CASCADE;
 DROP FUNCTION IF EXISTS check_user_limit() CASCADE;
-*/
 
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
