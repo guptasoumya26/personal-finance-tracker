@@ -260,6 +260,18 @@ export default function FinanceTracker() {
       // Create new expenses from template
       const newExpenses: Expense[] = [];
       for (const item of centralTemplate.items) {
+        // Additional check: Skip if an expense with the same name already exists for this month
+        const existingExpenseWithSameName = monthlyExpenses.find(exp =>
+          exp.name === item.name &&
+          exp.month.getMonth() === currentMonth.getMonth() &&
+          exp.month.getFullYear() === currentMonth.getFullYear()
+        );
+
+        if (existingExpenseWithSameName) {
+          console.log(`Skipping duplicate expense: ${item.name}`);
+          continue;
+        }
+
         const expenseData = {
           name: item.name,
           amount: item.amount,
@@ -326,6 +338,18 @@ export default function FinanceTracker() {
       // Create new investments from template
       const newInvestments: Investment[] = [];
       for (const item of centralInvestmentTemplate.items) {
+        // Additional check: Skip if an investment with the same name already exists for this month
+        const existingInvestmentWithSameName = monthlyInvestments.find(inv =>
+          inv.name === item.name &&
+          inv.month.getMonth() === currentMonth.getMonth() &&
+          inv.month.getFullYear() === currentMonth.getFullYear()
+        );
+
+        if (existingInvestmentWithSameName) {
+          console.log(`Skipping duplicate investment: ${item.name}`);
+          continue;
+        }
+
         const investmentData = {
           name: item.name,
           amount: item.amount,
@@ -534,16 +558,20 @@ export default function FinanceTracker() {
   };
 
   // Calculate current month totals
-  const currentMonthExpenses = monthlyExpenses.filter(exp =>
-    exp.month.getMonth() === currentMonth.getMonth() &&
-    exp.month.getFullYear() === currentMonth.getFullYear()
-  );
+  const currentMonthExpenses = monthlyExpenses
+    .filter(exp =>
+      exp.month.getMonth() === currentMonth.getMonth() &&
+      exp.month.getFullYear() === currentMonth.getFullYear()
+    )
+    .sort((a, b) => a.name.localeCompare(b.name));
   const totalExpenses = currentMonthExpenses.reduce((sum, exp) => sum + exp.amount, 0);
 
-  const currentMonthInvestments = monthlyInvestments.filter(inv =>
-    inv.month.getMonth() === currentMonth.getMonth() &&
-    inv.month.getFullYear() === currentMonth.getFullYear()
-  );
+  const currentMonthInvestments = monthlyInvestments
+    .filter(inv =>
+      inv.month.getMonth() === currentMonth.getMonth() &&
+      inv.month.getFullYear() === currentMonth.getFullYear()
+    )
+    .sort((a, b) => a.name.localeCompare(b.name));
   const totalInvestments = currentMonthInvestments.reduce((sum, inv) => sum + inv.amount, 0);
 
   // Calculate chart data from database
