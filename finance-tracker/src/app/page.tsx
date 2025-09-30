@@ -259,6 +259,8 @@ export default function FinanceTracker() {
 
       // Create new expenses from template
       const newExpenses: Expense[] = [];
+      const skippedItems: string[] = [];
+
       for (const item of centralTemplate.items) {
         // Additional check: Skip if an expense with the same name already exists for this month
         const existingExpenseWithSameName = monthlyExpenses.find(exp =>
@@ -269,6 +271,7 @@ export default function FinanceTracker() {
 
         if (existingExpenseWithSameName) {
           console.log(`Skipping duplicate expense: ${item.name}`);
+          skippedItems.push(item.name);
           continue;
         }
 
@@ -286,6 +289,15 @@ export default function FinanceTracker() {
           month: new Date(createdExpense.month + '-01'),
           createdAt: new Date(createdExpense.created_at)
         });
+      }
+
+      // Show user feedback about the operation
+      if (newExpenses.length === 0 && skippedItems.length > 0) {
+        alert(`All template items already exist for ${formatMonth(currentMonth)}:\n• ${skippedItems.join('\n• ')}`);
+      } else if (skippedItems.length > 0) {
+        alert(`Template filled successfully!\n\nAdded: ${newExpenses.length} expenses\nSkipped (already exist): ${skippedItems.length} expenses\n• ${skippedItems.join('\n• ')}`);
+      } else {
+        alert(`Successfully added ${newExpenses.length} expenses from template!`);
       }
 
       // Update local state
@@ -337,6 +349,8 @@ export default function FinanceTracker() {
 
       // Create new investments from template
       const newInvestments: Investment[] = [];
+      const skippedItems: string[] = [];
+
       for (const item of centralInvestmentTemplate.items) {
         // Additional check: Skip if an investment with the same name already exists for this month
         const existingInvestmentWithSameName = monthlyInvestments.find(inv =>
@@ -347,6 +361,7 @@ export default function FinanceTracker() {
 
         if (existingInvestmentWithSameName) {
           console.log(`Skipping duplicate investment: ${item.name}`);
+          skippedItems.push(item.name);
           continue;
         }
 
@@ -364,6 +379,15 @@ export default function FinanceTracker() {
           month: new Date(createdInvestment.month + '-01'),
           createdAt: new Date(createdInvestment.created_at)
         });
+      }
+
+      // Show user feedback about the operation
+      if (newInvestments.length === 0 && skippedItems.length > 0) {
+        alert(`All template items already exist for ${formatMonth(currentMonth)}:\n• ${skippedItems.join('\n• ')}`);
+      } else if (skippedItems.length > 0) {
+        alert(`Template filled successfully!\n\nAdded: ${newInvestments.length} investments\nSkipped (already exist): ${skippedItems.length} investments\n• ${skippedItems.join('\n• ')}`);
+      } else {
+        alert(`Successfully added ${newInvestments.length} investments from template!`);
       }
 
       // Update local state
