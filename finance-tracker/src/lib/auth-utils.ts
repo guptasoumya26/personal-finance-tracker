@@ -38,23 +38,8 @@ export async function getCurrentUser(request: NextRequest): Promise<Authenticate
     }
   } catch (error) {
     console.log('getCurrentUser - JWT verification failed:', error);
-    // Try legacy token format for backward compatibility
-    try {
-      const tokenData = Buffer.from(authToken.value, 'base64').toString();
-      const [username] = tokenData.split(':');
-      const legacyUsername = process.env.AUTH_USERNAME;
-
-      if (username === legacyUsername) {
-        // Return legacy admin user format
-        return {
-          id: 'legacy-admin',
-          username,
-          role: 'admin'
-        };
-      }
-    } catch {
-      // Ignore legacy token errors
-    }
+    // Legacy authentication removed - database reset invalidated old tokens
+    // Users need to login again with fresh JWT tokens
   }
 
   return null;
