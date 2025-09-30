@@ -14,7 +14,11 @@ import { formatINR } from '@/utils/currency';
 import * as api from '@/lib/api';
 
 export default function FinanceTracker() {
-  const [currentMonth, setCurrentMonth] = useState(new Date()); // Current month
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    const now = new Date();
+    console.log('🗓️ Setting initial month to:', now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }));
+    return now;
+  }); // Current month
   const [centralTemplate, setCentralTemplate] = useState<CentralTemplate | null>(null);
   const [centralInvestmentTemplate, setCentralInvestmentTemplate] = useState<CentralInvestmentTemplate | null>(null);
   const [activeTab, setActiveTab] = useState<'monthly' | 'template' | 'investment-template'>('monthly');
@@ -43,19 +47,34 @@ export default function FinanceTracker() {
     const n1 = normalize(name1);
     const n2 = normalize(name2);
 
+    console.log(`🔍 Fuzzy match test: "${n1}" vs "${n2}"`);
+
     // Exact match
-    if (n1 === n2) return true;
+    if (n1 === n2) {
+      console.log('✅ Exact match found');
+      return true;
+    }
 
     // Check for substring match of 5+ characters
-    if (n1.length >= 5 && n2.includes(n1)) return true;
-    if (n2.length >= 5 && n1.includes(n2)) return true;
+    if (n1.length >= 5 && n2.includes(n1)) {
+      console.log('✅ n1 is substring of n2');
+      return true;
+    }
+    if (n2.length >= 5 && n1.includes(n2)) {
+      console.log('✅ n2 is substring of n1');
+      return true;
+    }
 
     // Check for common substrings of 5+ characters
     for (let i = 0; i <= n1.length - 5; i++) {
       const substring = n1.substring(i, i + 5);
-      if (n2.includes(substring)) return true;
+      if (n2.includes(substring)) {
+        console.log(`✅ Found matching 5+ char substring: "${substring}"`);
+        return true;
+      }
     }
 
+    console.log('❌ No fuzzy match found');
     return false;
   };
 
@@ -324,7 +343,11 @@ export default function FinanceTracker() {
       }
 
       // Use both alert and console for visibility
-      alert(message);
+      console.log('🚨 About to show alert:', message);
+      setTimeout(() => {
+        alert(message);
+        console.log('✅ Alert shown');
+      }, 100);
       console.log('Template fill result:', message);
 
       // Update local state
@@ -419,7 +442,11 @@ export default function FinanceTracker() {
       }
 
       // Use both alert and console for visibility
-      alert(message);
+      console.log('🚨 About to show alert:', message);
+      setTimeout(() => {
+        alert(message);
+        console.log('✅ Alert shown');
+      }, 100);
       console.log('Template fill result:', message);
 
       // Update local state
