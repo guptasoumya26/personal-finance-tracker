@@ -9,6 +9,7 @@ import ExpenseForm from '@/components/ExpenseForm';
 import InvestmentForm from '@/components/InvestmentForm';
 import TrendChart from '@/components/TrendChart';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import Toast from '@/components/Toast';
 import { Expense, Investment, CentralTemplate, CentralInvestmentTemplate } from '@/types';
 import { formatINR } from '@/utils/currency';
 import * as api from '@/lib/api';
@@ -32,9 +33,22 @@ export default function FinanceTracker() {
   const [editingInvestment, setEditingInvestment] = useState<Investment | null>(null);
   const [currentNote, setCurrentNote] = useState<string>('');
   const notesTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: 'success' | 'info' | 'warning';
+    isVisible: boolean;
+  }>({
+    message: '',
+    type: 'success',
+    isVisible: false
+  });
 
   const formatMonth = (date: Date) => {
     return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  };
+
+  const showToast = (message: string, type: 'success' | 'info' | 'warning' = 'success') => {
+    setToast({ message, type, isVisible: true });
   };
 
   // Fuzzy matching function - checks if names are similar (5+ characters match)
@@ -312,18 +326,14 @@ export default function FinanceTracker() {
         });
       }
 
-      // Show user feedback about the operation
-      let message = '';
+      // Show user feedback with simple toast messages
       if (newExpenses.length === 0 && skippedItems.length > 0) {
-        message = `All template items already exist for ${formatMonth(currentMonth)}:\n• ${skippedItems.join('\n• ')}`;
+        showToast('Expenses are already present from the Master Template', 'warning');
       } else if (skippedItems.length > 0) {
-        message = `Template filled successfully!\n\nAdded: ${newExpenses.length} expenses\nSkipped (similar items exist): ${skippedItems.length} expenses\n• ${skippedItems.join('\n• ')}`;
+        showToast(`Added ${newExpenses.length} expenses, skipped ${skippedItems.length} similar items`, 'info');
       } else {
-        message = `Successfully added ${newExpenses.length} expenses from template!`;
+        showToast(`Successfully added ${newExpenses.length} expenses from template!`, 'success');
       }
-
-      // Show user feedback
-      alert(message);
 
       // Update local state
       setMonthlyExpenses(prev => [
@@ -405,18 +415,14 @@ export default function FinanceTracker() {
         });
       }
 
-      // Show user feedback about the operation
-      let message = '';
+      // Show user feedback with simple toast messages
       if (newInvestments.length === 0 && skippedItems.length > 0) {
-        message = `All template items already exist for ${formatMonth(currentMonth)}:\n• ${skippedItems.join('\n• ')}`;
+        showToast('Investments are already present from the Master Template', 'warning');
       } else if (skippedItems.length > 0) {
-        message = `Template filled successfully!\n\nAdded: ${newInvestments.length} investments\nSkipped (similar items exist): ${skippedItems.length} investments\n• ${skippedItems.join('\n• ')}`;
+        showToast(`Added ${newInvestments.length} investments, skipped ${skippedItems.length} similar items`, 'info');
       } else {
-        message = `Successfully added ${newInvestments.length} investments from template!`;
+        showToast(`Successfully added ${newInvestments.length} investments from template!`, 'success');
       }
-
-      // Show user feedback
-      alert(message);
 
       // Update local state
       setMonthlyInvestments(prev => [
@@ -1124,6 +1130,14 @@ export default function FinanceTracker() {
             }
             editingInvestment={editingInvestment || undefined}
             currentMonth={currentMonth}
+          />
+
+          {/* Toast Notification */}
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            isVisible={toast.isVisible}
+            onClose={() => setToast(prev => ({ ...prev, isVisible: false }))}
           />
         </div>
       </div>
