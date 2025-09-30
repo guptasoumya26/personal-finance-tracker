@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { X } from 'lucide-react';
-import { Investment } from '@/types';
+import { Investment, INVESTMENT_CATEGORIES, InvestmentCategory } from '@/types';
 
 interface InvestmentFormProps {
   isOpen: boolean;
@@ -22,6 +22,7 @@ export default function InvestmentForm({
   const [formData, setFormData] = useState({
     name: editingInvestment?.name || '',
     amount: editingInvestment?.amount?.toString() || '',
+    category: editingInvestment?.category || 'Other',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -30,17 +31,19 @@ export default function InvestmentForm({
     const investmentData: Omit<Investment, 'id' | 'createdAt'> = {
       name: formData.name,
       amount: parseFloat(formData.amount),
+      category: formData.category as InvestmentCategory,
       month: currentMonth,
+      sourceType: 'manual',
     };
 
     onSubmit(investmentData);
     onClose();
-    setFormData({ name: '', amount: '' });
+    setFormData({ name: '', amount: '', category: 'Other' });
   };
 
   const handleClose = () => {
     onClose();
-    setFormData({ name: '', amount: '' });
+    setFormData({ name: '', amount: '', category: 'Other' });
   };
 
   if (!isOpen) return null;
@@ -88,6 +91,24 @@ export default function InvestmentForm({
               placeholder="0"
               required
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Category
+            </label>
+            <select
+              value={formData.category}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value as InvestmentCategory })}
+              className="w-full bg-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            >
+              {INVESTMENT_CATEGORIES.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="flex gap-3 pt-2">

@@ -1,0 +1,90 @@
+import { NextRequest } from 'next/server';
+import jwt from 'jsonwebtoken';
+import { AuthService } from './auth';
+
+export interface AuthenticatedUser {
+  id: string;
+  username: string;
+  role: 'admin' | 'user';
+  email?: string;
+}
+
+/**
+ * Get the current authenticated user from the request
+ * Returns null if no valid authentication is found
+ */
+export async function getCurrentUser(request: NextRequest): Promise<AuthenticatedUser | null> {
+  const authToken = request.cookies.get('auth-token');
+  if (!authToken) return null;
+
+  try {
+    const jwtSecret = process.env.JWT_SECRET || 'fallback-secret-key';
+    const payload = jwt.verify(authToken.value, jwtSecret) as any;
+
+    if (payload && payload.userId) {
+      const user = await AuthService.getUserById(payload.userId);
+      if (user && user.status === 'active') {
+        return {
+          id: user.id,
+          username: user.username,
+          role: user.role,
+          email: user.email
+        };
+      }
+    }
+  } catch {
+    // Try legacy token format for backward compatibility
+    try {
+      const tokenData = Buffer.from(authToken.value, 'base64').toString();
+      const [username] = tokenData.split(':');
+      const legacyUsername = process.env.AUTH_USERNAME;
+
+      if (username === legacyUsername) {
+        // Return legacy admin user format
+        return {
+          id: 'legacy-admin',
+          username,
+          role: 'admin'
+        };
+      }
+    } catch {
+      // Ignore legacy token errors
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Middleware function to require authentication
+ * Returns user if authenticated, throws error if not
+ */
+export async function requireAuth(request: NextRequest): Promise<AuthenticatedUser> {
+  const user = await getCurrentUser(request);
+  if (!user) {
+    throw new Error('Authentication required');
+  }
+  return user;
+}
+
+/**
+ * Middleware function to require admin role
+ * Returns user if admin, throws error if not
+ */
+export async function requireAdmin(request: NextRequest): Promise<AuthenticatedUser> {
+  const user = await requireAuth(request);
+  if (user.role !== 'admin') {
+    throw new Error('Admin access required');
+  }
+  return user;
+}
+
+/**
+ * Create a standardized error response for authentication failures
+ */
+export function createAuthErrorResponse(error: Error, status: number = 401) {
+  return Response.json(
+    { error: error.message },
+    { status }
+  );
+}

@@ -1,8 +1,10 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { requireAuth, createAuthErrorResponse } from '@/lib/auth-utils';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
+    const user = await requireAuth(request);
     const { searchParams } = new URL(request.url);
     const month = searchParams.get('month');
 
@@ -17,6 +19,7 @@ export async function GET(request: Request) {
       .from('notes')
       .select('*')
       .eq('month', month)
+      .eq('user_id', user.id)
       .single();
 
     if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
@@ -25,6 +28,9 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ data: data || null });
   } catch (error) {
+    if (error instanceof Error && error.message === 'Authentication required') {
+      return createAuthErrorResponse(error, 401);
+    }
     console.error('Error fetching note:', error);
     return NextResponse.json(
       { error: 'Failed to fetch note' },
@@ -33,16 +39,18 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    const user = await requireAuth(request);
     const body = await request.json();
     const { content, month } = body;
 
-    // Check if note already exists for this month
+    // Check if note already exists for this user and month
     const { data: existing } = await supabase
       .from('notes')
       .select('id')
       .eq('month', month)
+      .eq('user_id', user.id)
       .single();
 
     let result;
@@ -52,13 +60,14 @@ export async function POST(request: Request) {
         .from('notes')
         .update({ content, updated_at: new Date().toISOString() })
         .eq('id', existing.id)
+        .eq('user_id', user.id) // Double-check user ownership
         .select()
         .single();
     } else {
       // Create new note
       result = await supabase
         .from('notes')
-        .insert({ content, month })
+        .insert({ user_id: user.id, content, month })
         .select()
         .single();
     }
@@ -69,6 +78,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ data: result.data });
   } catch (error) {
+    if (error instanceof Error && error.message === 'Authentication required') {
+      return createAuthErrorResponse(error, 401);
+    }
     console.error('Error saving note:', error);
     return NextResponse.json(
       { error: 'Failed to save note' },
@@ -77,8 +89,9 @@ export async function POST(request: Request) {
   }
 }
 
-export async function PUT(request: Request) {
+export async function PUT(request: NextRequest) {
   try {
+    const user = await requireAuth(request);
     const body = await request.json();
     const { content, month } = body;
 
@@ -86,6 +99,7 @@ export async function PUT(request: Request) {
       .from('notes')
       .update({ content, updated_at: new Date().toISOString() })
       .eq('month', month)
+      .eq('user_id', user.id) // Ensure user can only update their own notes
       .select()
       .single();
 
@@ -95,6 +109,9 @@ export async function PUT(request: Request) {
 
     return NextResponse.json({ data });
   } catch (error) {
+    if (error instanceof Error && error.message === 'Authentication required') {
+      return createAuthErrorResponse(error, 401);
+    }
     console.error('Error updating note:', error);
     return NextResponse.json(
       { error: 'Failed to update note' },

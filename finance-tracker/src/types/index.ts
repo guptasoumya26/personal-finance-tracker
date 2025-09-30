@@ -15,6 +15,22 @@ export const EXPENSE_CATEGORIES = [
 
 export type ExpenseCategory = typeof EXPENSE_CATEGORIES[number];
 
+// Investment categories
+export const INVESTMENT_CATEGORIES = [
+  'Stocks',
+  'Mutual Funds',
+  'Fixed Deposits',
+  'Real Estate',
+  'Gold',
+  'Cryptocurrency',
+  'Bonds',
+  'PPF',
+  'ELSS',
+  'Other'
+] as const;
+
+export type InvestmentCategory = typeof INVESTMENT_CATEGORIES[number];
+
 // Central Template - Single template system
 export interface CentralTemplate {
   id: string;
@@ -28,6 +44,22 @@ export interface TemplateItem {
   name: string;
   amount: number;
   category: ExpenseCategory;
+}
+
+// Investment Template Item
+export interface InvestmentTemplateItem {
+  id: string;
+  name: string;
+  amount: number;
+  category: InvestmentCategory;
+}
+
+// Central Investment Template
+export interface CentralInvestmentTemplate {
+  id: string;
+  items: InvestmentTemplateItem[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 // Monthly Template Instance - copied from central template
@@ -57,7 +89,10 @@ export interface Investment {
   id: string;
   name: string;
   amount: number;
+  category: InvestmentCategory;
   month: Date;
+  sourceType: 'manual' | 'template';
+  monthlyTemplateInstanceId?: string;
   createdAt: Date;
 }
 

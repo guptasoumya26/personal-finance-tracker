@@ -4,18 +4,20 @@ import { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Plus, Edit2, Trash2, Calendar, Settings, Menu, X, LogOut } from 'lucide-react';
 // import RecurringTemplates from '@/components/RecurringTemplates';
 import CentralTemplateManager from '@/components/CentralTemplateManager';
+import CentralInvestmentTemplateManager from '@/components/CentralInvestmentTemplateManager';
 import ExpenseForm from '@/components/ExpenseForm';
 import InvestmentForm from '@/components/InvestmentForm';
 import TrendChart from '@/components/TrendChart';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { Expense, Investment, CentralTemplate } from '@/types';
+import { Expense, Investment, CentralTemplate, CentralInvestmentTemplate } from '@/types';
 import { formatINR } from '@/utils/currency';
 import * as api from '@/lib/api';
 
 export default function FinanceTracker() {
   const [currentMonth, setCurrentMonth] = useState(new Date(2025, 9)); // October 2025
   const [centralTemplate, setCentralTemplate] = useState<CentralTemplate | null>(null);
-  const [activeTab, setActiveTab] = useState<'monthly' | 'template'>('monthly');
+  const [centralInvestmentTemplate, setCentralInvestmentTemplate] = useState<CentralInvestmentTemplate | null>(null);
+  const [activeTab, setActiveTab] = useState<'monthly' | 'template' | 'investment-template'>('monthly');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingExpenses, setLoadingExpenses] = useState(false);
@@ -65,6 +67,17 @@ export default function FinanceTracker() {
             items: template.items || [],
             createdAt: new Date(template.created_at),
             updatedAt: new Date(template.updated_at)
+          });
+        }
+
+        // Load central investment template
+        const investmentTemplate = await api.fetchCentralInvestmentTemplate();
+        if (investmentTemplate) {
+          setCentralInvestmentTemplate({
+            ...investmentTemplate,
+            items: investmentTemplate.items || [],
+            createdAt: new Date(investmentTemplate.created_at),
+            updatedAt: new Date(investmentTemplate.updated_at)
           });
         }
 
@@ -191,6 +204,37 @@ export default function FinanceTracker() {
     }
   };
 
+  // Central investment template management functions
+  const handleCreateCentralInvestmentTemplate = async () => {
+    try {
+      const template = await api.saveCentralInvestmentTemplate([]);
+      setCentralInvestmentTemplate({
+        ...template,
+        items: template.items || [],
+        createdAt: new Date(template.created_at),
+        updatedAt: new Date(template.updated_at)
+      });
+    } catch (error) {
+      console.error('Error creating central investment template:', error);
+      alert('Failed to create investment template. Please try again.');
+    }
+  };
+
+  const handleUpdateCentralInvestmentTemplate = async (template: CentralInvestmentTemplate) => {
+    try {
+      const updatedTemplate = await api.updateCentralInvestmentTemplate(template.items);
+      setCentralInvestmentTemplate({
+        ...updatedTemplate,
+        items: updatedTemplate.items || [],
+        createdAt: new Date(updatedTemplate.created_at),
+        updatedAt: new Date(updatedTemplate.updated_at)
+      });
+    } catch (error) {
+      console.error('Error updating central investment template:', error);
+      alert('Failed to update investment template. Please try again.');
+    }
+  };
+
 
   const handleFillExpenses = async () => {
     if (!centralTemplate || centralTemplate.items.length === 0) {
@@ -255,6 +299,72 @@ export default function FinanceTracker() {
       alert('Failed to fill expenses. Please try again.');
     } finally {
       setLoadingExpenses(false);
+    }
+  };
+
+  const handleFillInvestments = async () => {
+    if (!centralInvestmentTemplate || centralInvestmentTemplate.items.length === 0) {
+      alert('Please create a central investment template first before filling investments.');
+      return;
+    }
+
+    try {
+      setLoadingInvestments(true);
+      const monthKey = api.formatMonthForAPI(currentMonth);
+
+      // First, delete existing template-based investments for this month
+      const existingTemplateInvestments = monthlyInvestments.filter(inv =>
+        inv.sourceType === 'template' &&
+        inv.month.getMonth() === currentMonth.getMonth() &&
+        inv.month.getFullYear() === currentMonth.getFullYear()
+      );
+
+      for (const investment of existingTemplateInvestments) {
+        await api.deleteInvestment(investment.id);
+      }
+
+      // Create new investments from template
+      const newInvestments: Investment[] = [];
+      for (const item of centralInvestmentTemplate.items) {
+        const investmentData = {
+          name: item.name,
+          amount: item.amount,
+          category: item.category,
+          month: monthKey,
+          source_type: 'template' as const
+        };
+
+        const createdInvestment = await api.createInvestment(investmentData);
+        newInvestments.push({
+          ...createdInvestment,
+          month: new Date(createdInvestment.month + '-01'),
+          createdAt: new Date(createdInvestment.created_at)
+        });
+      }
+
+      // Update local state
+      setMonthlyInvestments(prev => [
+        ...prev.filter(inv =>
+          inv.sourceType !== 'template' ||
+          inv.month.getMonth() !== currentMonth.getMonth() ||
+          inv.month.getFullYear() !== currentMonth.getFullYear()
+        ),
+        ...newInvestments
+      ]);
+      setAllInvestments(prev => [
+        ...prev.filter(inv =>
+          inv.sourceType !== 'template' ||
+          inv.month.getMonth() !== currentMonth.getMonth() ||
+          inv.month.getFullYear() !== currentMonth.getFullYear()
+        ),
+        ...newInvestments
+      ]);
+
+    } catch (error) {
+      console.error('Error filling investments:', error);
+      alert('Failed to fill investments. Please try again.');
+    } finally {
+      setLoadingInvestments(false);
     }
   };
 
@@ -352,7 +462,9 @@ export default function FinanceTracker() {
       const investmentData = {
         name: investment.name,
         amount: investment.amount,
-        month: api.formatMonthForAPI(investment.month)
+        category: investment.category,
+        month: api.formatMonthForAPI(investment.month),
+        source_type: investment.sourceType
       };
 
       const createdInvestment = await api.createInvestment(investmentData);
@@ -376,7 +488,9 @@ export default function FinanceTracker() {
         id,
         name: investment.name,
         amount: investment.amount,
-        month: api.formatMonthForAPI(investment.month)
+        category: investment.category,
+        month: api.formatMonthForAPI(investment.month),
+        source_type: investment.sourceType
       };
 
       const updatedInvestment = await api.updateInvestment(investmentData);
@@ -438,16 +552,35 @@ export default function FinanceTracker() {
     const expenseChartData = new Array(12).fill(0);
     const investmentChartData = new Array(12).fill(0);
 
-    // Calculate expenses by month
+    // Only include data from 2025 to avoid phantom entries from other years
+    const currentYear = 2025;
+
+    // Calculate expenses by month - only from current year
     allExpenses.forEach(expense => {
-      const month = expense.month.getMonth(); // 0-11
-      expenseChartData[month] += expense.amount;
+      // Validate the date and year
+      if (expense.month instanceof Date &&
+          expense.month.getFullYear() === currentYear &&
+          !isNaN(expense.month.getTime()) &&
+          expense.amount > 0) {
+        const month = expense.month.getMonth(); // 0-11
+        if (month >= 0 && month <= 11) {
+          expenseChartData[month] += expense.amount;
+        }
+      }
     });
 
-    // Calculate investments by month
+    // Calculate investments by month - only from current year
     allInvestments.forEach(investment => {
-      const month = investment.month.getMonth(); // 0-11
-      investmentChartData[month] += investment.amount;
+      // Validate the date and year
+      if (investment.month instanceof Date &&
+          investment.month.getFullYear() === currentYear &&
+          !isNaN(investment.month.getTime()) &&
+          investment.amount > 0) {
+        const month = investment.month.getMonth(); // 0-11
+        if (month >= 0 && month <= 11) {
+          investmentChartData[month] += investment.amount;
+        }
+      }
     });
 
     return { expenseChartData, investmentChartData, monthLabels };
@@ -503,7 +636,14 @@ export default function FinanceTracker() {
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left ${activeTab === 'template' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-700'}`}
             >
               <Settings className="w-5 h-5" />
-              Central Template
+              Expense Template
+            </button>
+            <button
+              onClick={() => {setActiveTab('investment-template'); setSidebarOpen(false);}}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left ${activeTab === 'investment-template' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-700'}`}
+            >
+              <Settings className="w-5 h-5" />
+              Investment Template
             </button>
           </div>
         </nav>
@@ -534,7 +674,7 @@ export default function FinanceTracker() {
             // Central Template Management View
             <div className="max-w-4xl mx-auto">
               <div className="mb-6">
-                <h1 className="text-2xl sm:text-3xl font-semibold mb-2">Central Template Management</h1>
+                <h1 className="text-2xl sm:text-3xl font-semibold mb-2">Expense Template Management</h1>
                 <p className="text-gray-400">Manage your recurring expense template that will be used across all months</p>
               </div>
 
@@ -542,6 +682,20 @@ export default function FinanceTracker() {
                 centralTemplate={centralTemplate}
                 onUpdateTemplate={handleUpdateCentralTemplate}
                 onCreateTemplate={handleCreateCentralTemplate}
+              />
+            </div>
+          ) : activeTab === 'investment-template' ? (
+            // Central Investment Template Management View
+            <div className="max-w-4xl mx-auto">
+              <div className="mb-6">
+                <h1 className="text-2xl sm:text-3xl font-semibold mb-2">Investment Template Management</h1>
+                <p className="text-gray-400">Manage your recurring investment template that will be used across all months</p>
+              </div>
+
+              <CentralInvestmentTemplateManager
+                centralInvestmentTemplate={centralInvestmentTemplate}
+                onUpdateTemplate={handleUpdateCentralInvestmentTemplate}
+                onCreateTemplate={handleCreateCentralInvestmentTemplate}
               />
             </div>
           ) : (
@@ -627,6 +781,64 @@ export default function FinanceTracker() {
                     >
                       <Settings className="w-4 h-4" />
                       Create Central Template
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Investment Template Fill Section */}
+              <div className="bg-gray-800 rounded-lg p-4 sm:p-6 mb-4 sm:mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
+                  <div>
+                    <h2 className="text-lg sm:text-xl font-semibold">Investment Template Fill</h2>
+                    <p className="text-gray-400 text-sm">Copy your investment template to this month&apos;s investments</p>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab('investment-template')}
+                    className="text-blue-400 hover:text-blue-300 text-sm transition-colors flex items-center gap-1"
+                  >
+                    <Settings className="w-4 h-4" />
+                    Manage Investment Template
+                  </button>
+                </div>
+
+                {centralInvestmentTemplate && centralInvestmentTemplate.items.length > 0 ? (
+                  <div className="space-y-4">
+                    <div className="bg-gray-700 rounded-lg p-3 sm:p-4">
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <div>
+                          <p className="text-gray-400 text-xs sm:text-sm">{centralInvestmentTemplate.items.length} Investment Items</p>
+                          <p className="text-blue-400 text-base sm:text-lg font-semibold">
+                            {formatINR(centralInvestmentTemplate.items.reduce((sum, item) => sum + item.amount, 0))}
+                          </p>
+                          <p className="text-gray-400 text-xs">Will be added to {formatMonth(currentMonth)}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={handleFillInvestments}
+                      disabled={loadingInvestments}
+                      className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-700/50 disabled:cursor-not-allowed text-white py-2 sm:py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors text-sm sm:text-base"
+                    >
+                      {loadingInvestments ? (
+                        <LoadingSpinner size="sm" />
+                      ) : (
+                        <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+                      )}
+                      Fill with Recurring Investments
+                    </button>
+                  </div>
+                ) : (
+                  <div className="text-center text-gray-400 py-6 sm:py-8">
+                    <p className="mb-2 text-sm sm:text-base">No investment template available</p>
+                    <p className="text-xs sm:text-sm mb-4">Create an investment template to enable monthly filling</p>
+                    <button
+                      onClick={() => setActiveTab('investment-template')}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg inline-flex items-center gap-2 transition-colors text-sm"
+                    >
+                      <Settings className="w-4 h-4" />
+                      Create Investment Template
                     </button>
                   </div>
                 )}
@@ -745,7 +957,15 @@ export default function FinanceTracker() {
                   currentMonthInvestments.map((investment) => (
                     <div key={investment.id} className="flex items-center justify-between p-2 sm:p-3 bg-gray-700 rounded-lg">
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm sm:text-base truncate">{investment.name}</p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-medium text-sm sm:text-base truncate">{investment.name}</p>
+                          {investment.sourceType === 'template' && (
+                            <span className="text-xs bg-blue-600 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded whitespace-nowrap">
+                              Template
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-gray-400 text-xs sm:text-sm truncate">{investment.category}</p>
                       </div>
                       <div className="flex items-center gap-2 sm:gap-3 ml-2">
                         <p className="text-blue-400 font-semibold text-sm sm:text-base">{formatINR(investment.amount)}</p>

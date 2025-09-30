@@ -116,6 +116,46 @@ export async function createInvestment(investment: any) {
   return result.data;
 }
 
+// Central Investment Template API
+export async function fetchCentralInvestmentTemplate() {
+  const response = await fetch('/api/central-investment-template');
+  if (!response.ok) {
+    throw new Error('Failed to fetch central investment template');
+  }
+  const result = await response.json();
+  return result.data;
+}
+
+export async function saveCentralInvestmentTemplate(items: any[]) {
+  const response = await fetch('/api/central-investment-template', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ items }),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to save central investment template');
+  }
+  const result = await response.json();
+  return result.data;
+}
+
+export async function updateCentralInvestmentTemplate(items: any[]) {
+  const response = await fetch('/api/central-investment-template', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ items }),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to update central investment template');
+  }
+  const result = await response.json();
+  return result.data;
+}
+
 export async function updateInvestment(investment: any) {
   const response = await fetch('/api/investments', {
     method: 'PUT',

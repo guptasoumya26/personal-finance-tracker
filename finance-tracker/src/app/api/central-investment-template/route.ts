@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     const user = await requireAuth(request);
 
     const { data, error } = await supabase
-      .from('central_templates')
+      .from('central_investment_templates')
       .select('*')
       .eq('user_id', user.id)
       .single();
@@ -21,9 +21,9 @@ export async function GET(request: NextRequest) {
     if (error instanceof Error && error.message === 'Authentication required') {
       return createAuthErrorResponse(error, 401);
     }
-    console.error('Error fetching central template:', error);
+    console.error('Error fetching central investment template:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch central template' },
+      { error: 'Failed to fetch central investment template' },
       { status: 500 }
     );
   }
@@ -35,43 +35,27 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { items } = body;
 
-    // Check if template already exists for this user
-    const { data: existing } = await supabase
-      .from('central_templates')
-      .select('id')
-      .eq('user_id', user.id)
+    const { data, error } = await supabase
+      .from('central_investment_templates')
+      .insert({
+        user_id: user.id,
+        items: items || []
+      })
+      .select()
       .single();
 
-    let result;
-    if (existing) {
-      // Update existing template
-      result = await supabase
-        .from('central_templates')
-        .update({ items, updated_at: new Date().toISOString() })
-        .eq('id', existing.id)
-        .select()
-        .single();
-    } else {
-      // Create new template
-      result = await supabase
-        .from('central_templates')
-        .insert({ user_id: user.id, items })
-        .select()
-        .single();
+    if (error) {
+      throw error;
     }
 
-    if (result.error) {
-      throw result.error;
-    }
-
-    return NextResponse.json({ data: result.data });
+    return NextResponse.json({ data });
   } catch (error) {
     if (error instanceof Error && error.message === 'Authentication required') {
       return createAuthErrorResponse(error, 401);
     }
-    console.error('Error saving central template:', error);
+    console.error('Error creating central investment template:', error);
     return NextResponse.json(
-      { error: 'Failed to save central template' },
+      { error: 'Failed to create central investment template' },
       { status: 500 }
     );
   }
@@ -83,29 +67,27 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { items } = body;
 
-    // First, get the existing template for this user
-    const { data: existing, error: fetchError } = await supabase
-      .from('central_templates')
+    // First, check if a template exists for this user
+    const { data: existingTemplate } = await supabase
+      .from('central_investment_templates')
       .select('id')
       .eq('user_id', user.id)
       .single();
 
-    if (fetchError) {
-      throw fetchError;
-    }
-
-    if (!existing) {
+    if (!existingTemplate) {
       return NextResponse.json(
-        { error: 'No central template found to update' },
+        { error: 'No central investment template found to update' },
         { status: 404 }
       );
     }
 
-    // Update the template with the specific ID
     const { data, error } = await supabase
-      .from('central_templates')
-      .update({ items, updated_at: new Date().toISOString() })
-      .eq('id', existing.id)
+      .from('central_investment_templates')
+      .update({
+        items: items || [],
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', existingTemplate.id)
       .eq('user_id', user.id) // Double-check user ownership
       .select()
       .single();
@@ -119,9 +101,9 @@ export async function PUT(request: NextRequest) {
     if (error instanceof Error && error.message === 'Authentication required') {
       return createAuthErrorResponse(error, 401);
     }
-    console.error('Error updating central template:', error);
+    console.error('Error updating central investment template:', error);
     return NextResponse.json(
-      { error: 'Failed to update central template' },
+      { error: 'Failed to update central investment template' },
       { status: 500 }
     );
   }
