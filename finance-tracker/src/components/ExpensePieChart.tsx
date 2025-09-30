@@ -63,7 +63,7 @@ export default function ExpensePieChart({ expenses, monthName }: ExpensePieChart
       legend: {
         position: 'right' as const,
         labels: {
-          color: '#E5E7EB',
+          color: '#FFFFFF',
           font: {
             size: 12,
           },
