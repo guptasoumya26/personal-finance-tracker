@@ -1,10 +1,13 @@
 import { useEffect, useRef } from 'react';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, defaults } from 'chart.js';
 import { Pie } from 'react-chartjs-2';
 import { Expense } from '@/types';
 import { formatINR } from '@/utils/currency';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
+
+// Set global Chart.js defaults for better text visibility
+defaults.color = '#FFFFFF';
 
 interface ExpensePieChartProps {
   expenses: Expense[];
@@ -73,11 +76,14 @@ export default function ExpensePieChart({ expenses, monthName }: ExpensePieChart
             if (data.labels.length && data.datasets.length) {
               return data.labels.map((label: string, i: number) => {
                 const value = data.datasets[0].data[i];
+                // Truncate long labels but show full text in tooltip
+                const displayLabel = label.length > 20 ? `${label.substring(0, 17)}...` : label;
                 return {
-                  text: `${label}: ${formatINR(value)}`,
+                  text: `${displayLabel}: ${formatINR(value)}`,
                   fillStyle: data.datasets[0].backgroundColor[i],
                   strokeStyle: data.datasets[0].borderColor[i],
                   lineWidth: data.datasets[0].borderWidth,
+                  fontColor: '#FFFFFF',
                   hidden: false,
                   index: i,
                 };
@@ -98,7 +104,9 @@ export default function ExpensePieChart({ expenses, monthName }: ExpensePieChart
             const value = context.parsed;
             const total = context.dataset.data.reduce((sum: number, val: number) => sum + val, 0);
             const percentage = ((value / total) * 100).toFixed(1);
-            return `${context.label}: ${formatINR(value)} (${percentage}%)`;
+            // Show full label in tooltip (not truncated)
+            const fullLabel = context.chart.data.labels[context.dataIndex];
+            return `${fullLabel}: ${formatINR(value)} (${percentage}%)`;
           }
         }
       }
