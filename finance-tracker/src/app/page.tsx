@@ -9,6 +9,8 @@ import ExpenseForm from '@/components/ExpenseForm';
 import InvestmentForm from '@/components/InvestmentForm';
 import TrendChart from '@/components/TrendChart';
 import ExpensePieChart from '@/components/ExpensePieChart';
+import InvestmentPieChart from '@/components/InvestmentPieChart';
+import SelfInvestmentTrendChart from '@/components/SelfInvestmentTrendChart';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Toast from '@/components/Toast';
 import { Expense, Investment, CentralTemplate, CentralInvestmentTemplate } from '@/types';
@@ -404,6 +406,7 @@ export default function FinanceTracker() {
           name: item.name,
           amount: item.amount,
           category: item.category,
+          investment_type: item.investmentType,
           month: monthKey,
           source_type: 'template' as const
         };
@@ -638,6 +641,7 @@ export default function FinanceTracker() {
     const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const expenseChartData = new Array(12).fill(0);
     const investmentChartData = new Array(12).fill(0);
+    const selfInvestmentChartData = new Array(12).fill(0);
 
     // Only include data from 2025 to avoid phantom entries from other years
     const currentYear = 2025;
@@ -666,14 +670,19 @@ export default function FinanceTracker() {
         const month = investment.month.getMonth(); // 0-11
         if (month >= 0 && month <= 11) {
           investmentChartData[month] += investment.amount;
+
+          // Calculate self investments separately
+          if (investment.investmentType === 'Self') {
+            selfInvestmentChartData[month] += investment.amount;
+          }
         }
       }
     });
 
-    return { expenseChartData, investmentChartData, monthLabels };
+    return { expenseChartData, investmentChartData, selfInvestmentChartData, monthLabels };
   };
 
-  const { expenseChartData, investmentChartData, monthLabels } = calculateChartData();
+  const { expenseChartData, investmentChartData, selfInvestmentChartData, monthLabels } = calculateChartData();
 
   if (loading) {
     return (
@@ -1059,6 +1068,13 @@ export default function FinanceTracker() {
                               Template
                             </span>
                           )}
+                          <span className={`text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded whitespace-nowrap ${
+                            investment.investmentType === 'Self' ? 'bg-green-600 text-white' :
+                            investment.investmentType === 'Combined' ? 'bg-purple-600 text-white' :
+                            'bg-gray-600 text-white'
+                          }`}>
+                            {investment.investmentType || 'Self'}
+                          </span>
                         </div>
                         <p className="text-gray-400 text-xs sm:text-sm truncate">{investment.category}</p>
                       </div>
@@ -1089,12 +1105,26 @@ export default function FinanceTracker() {
                 )}
               </div>
 
+              {/* Investment Type Distribution Pie Chart */}
+              <InvestmentPieChart
+                investments={currentMonthInvestments}
+                monthName={formatMonth(currentMonth)}
+              />
+
               {/* Investment Trend Chart */}
               <TrendChart
                 data={investmentChartData}
                 labels={monthLabels}
                 color="#3b82f6"
                 type="investments"
+              />
+
+              {/* Self Investment Trend Chart */}
+              <SelfInvestmentTrendChart
+                data={selfInvestmentChartData}
+                labels={monthLabels}
+                color="#10b981"
+                title="Self Investments"
               />
             </div>
           </div>

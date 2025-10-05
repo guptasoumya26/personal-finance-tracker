@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS investments (
     name VARCHAR(255) NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
     category VARCHAR(100) NOT NULL,
+    investment_type VARCHAR(20) NOT NULL DEFAULT 'Self' CHECK (investment_type IN ('Self', 'Combined', 'Other')),
     month VARCHAR(7) NOT NULL, -- Format: YYYY-MM
     source_type VARCHAR(20) NOT NULL DEFAULT 'manual' CHECK (source_type IN ('manual', 'template')),
     monthly_template_instance_id UUID,

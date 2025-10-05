@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { X } from 'lucide-react';
-import { Investment, INVESTMENT_CATEGORIES, InvestmentCategory } from '@/types';
+import { Investment, INVESTMENT_CATEGORIES, InvestmentCategory, INVESTMENT_TYPES, InvestmentType } from '@/types';
 
 interface InvestmentFormProps {
   isOpen: boolean;
@@ -23,6 +23,7 @@ export default function InvestmentForm({
     name: editingInvestment?.name || '',
     amount: editingInvestment?.amount?.toString() || '',
     category: editingInvestment?.category || 'Other',
+    investmentType: editingInvestment?.investmentType || 'Self',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -32,18 +33,19 @@ export default function InvestmentForm({
       name: formData.name,
       amount: parseFloat(formData.amount),
       category: formData.category as InvestmentCategory,
+      investmentType: formData.investmentType as InvestmentType,
       month: currentMonth,
       sourceType: 'manual',
     };
 
     onSubmit(investmentData);
     onClose();
-    setFormData({ name: '', amount: '', category: 'Other' });
+    setFormData({ name: '', amount: '', category: 'Other', investmentType: 'Self' });
   };
 
   const handleClose = () => {
     onClose();
-    setFormData({ name: '', amount: '', category: 'Other' });
+    setFormData({ name: '', amount: '', category: 'Other', investmentType: 'Self' });
   };
 
   if (!isOpen) return null;
@@ -106,6 +108,24 @@ export default function InvestmentForm({
               {INVESTMENT_CATEGORIES.map((category) => (
                 <option key={category} value={category}>
                   {category}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Investment Type
+            </label>
+            <select
+              value={formData.investmentType}
+              onChange={(e) => setFormData({ ...formData, investmentType: e.target.value as InvestmentType })}
+              className="w-full bg-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            >
+              {INVESTMENT_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {type}
                 </option>
               ))}
             </select>

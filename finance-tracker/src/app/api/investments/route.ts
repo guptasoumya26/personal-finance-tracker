@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
   try {
     const user = await requireAuth(request);
     const body = await request.json();
-    const { name, amount, category, month, source_type, monthly_template_instance_id } = body;
+    const { name, amount, category, investment_type, month, source_type, monthly_template_instance_id } = body;
 
     const { data, error } = await supabase
       .from('investments')
@@ -46,6 +46,7 @@ export async function POST(request: NextRequest) {
         name,
         amount,
         category,
+        investment_type: investment_type || 'Self',
         month,
         source_type,
         monthly_template_instance_id
@@ -74,11 +75,11 @@ export async function PUT(request: NextRequest) {
   try {
     const user = await requireAuth(request);
     const body = await request.json();
-    const { id, name, amount, category, month, source_type } = body;
+    const { id, name, amount, category, investment_type, month, source_type } = body;
 
     const { data, error } = await supabase
       .from('investments')
-      .update({ name, amount, category, month, source_type })
+      .update({ name, amount, category, investment_type: investment_type || 'Self', month, source_type })
       .eq('id', id)
       .eq('user_id', user.id) // Ensure user can only update their own investments
       .select()

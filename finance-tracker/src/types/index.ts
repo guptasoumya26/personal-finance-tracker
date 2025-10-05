@@ -31,6 +31,15 @@ export const INVESTMENT_CATEGORIES = [
 
 export type InvestmentCategory = typeof INVESTMENT_CATEGORIES[number];
 
+// Investment Type (Self, Combined, Other)
+export const INVESTMENT_TYPES = [
+  'Self',
+  'Combined',
+  'Other'
+] as const;
+
+export type InvestmentType = typeof INVESTMENT_TYPES[number];
+
 // Central Template - Single template system
 export interface CentralTemplate {
   id: string;
@@ -52,6 +61,7 @@ export interface InvestmentTemplateItem {
   name: string;
   amount: number;
   category: InvestmentCategory;
+  investmentType: InvestmentType;
 }
 
 // Central Investment Template
@@ -90,6 +100,7 @@ export interface Investment {
   name: string;
   amount: number;
   category: InvestmentCategory;
+  investmentType: InvestmentType;
   month: Date;
   sourceType: 'manual' | 'template';
   monthlyTemplateInstanceId?: string;

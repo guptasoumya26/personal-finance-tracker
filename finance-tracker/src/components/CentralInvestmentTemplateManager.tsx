@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Plus, Edit2, Trash2, Settings, AlertCircle } from 'lucide-react';
-import { CentralInvestmentTemplate, InvestmentTemplateItem, INVESTMENT_CATEGORIES, InvestmentCategory } from '@/types';
+import { CentralInvestmentTemplate, InvestmentTemplateItem, INVESTMENT_CATEGORIES, InvestmentCategory, INVESTMENT_TYPES, InvestmentType } from '@/types';
 import { formatINR } from '@/utils/currency';
 
 interface CentralInvestmentTemplateManagerProps {
@@ -22,10 +22,11 @@ export default function CentralInvestmentTemplateManager({
     name: '',
     amount: '',
     category: 'Other' as InvestmentCategory,
+    investmentType: 'Self' as InvestmentType,
   });
 
   const resetForm = () => {
-    setFormData({ name: '', amount: '', category: 'Other' });
+    setFormData({ name: '', amount: '', category: 'Other', investmentType: 'Self' });
     setShowForm(false);
     setEditingItem(null);
   };
@@ -40,6 +41,7 @@ export default function CentralInvestmentTemplateManager({
       name: formData.name,
       amount: parseFloat(formData.amount),
       category: formData.category,
+      investmentType: formData.investmentType,
     };
 
     let updatedItems: InvestmentTemplateItem[];
@@ -68,6 +70,7 @@ export default function CentralInvestmentTemplateManager({
       name: item.name,
       amount: item.amount.toString(),
       category: item.category,
+      investmentType: item.investmentType || 'Self',
     });
     setShowForm(true);
   };
@@ -141,7 +144,16 @@ export default function CentralInvestmentTemplateManager({
               {centralInvestmentTemplate.items.map((item) => (
                 <div key={item.id} className="flex items-center justify-between p-2 sm:p-3 bg-gray-700 rounded-lg">
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm sm:text-base truncate">{item.name}</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-medium text-sm sm:text-base truncate">{item.name}</p>
+                      <span className={`text-xs px-2 py-0.5 rounded ${
+                        item.investmentType === 'Self' ? 'bg-green-600 text-white' :
+                        item.investmentType === 'Combined' ? 'bg-purple-600 text-white' :
+                        'bg-gray-600 text-white'
+                      }`}>
+                        {item.investmentType || 'Self'}
+                      </span>
+                    </div>
                     <p className="text-gray-400 text-xs sm:text-sm truncate">{item.category}</p>
                   </div>
                   <div className="flex items-center gap-2 sm:gap-3 ml-2">
@@ -224,6 +236,24 @@ export default function CentralInvestmentTemplateManager({
                   {INVESTMENT_CATEGORIES.map((category) => (
                     <option key={category} value={category}>
                       {category}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Investment Type
+                </label>
+                <select
+                  value={formData.investmentType}
+                  onChange={(e) => setFormData({ ...formData, investmentType: e.target.value as InvestmentType })}
+                  className="w-full bg-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  {INVESTMENT_TYPES.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
                     </option>
                   ))}
                 </select>
