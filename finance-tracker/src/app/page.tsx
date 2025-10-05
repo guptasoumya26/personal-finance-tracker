@@ -132,6 +132,7 @@ export default function FinanceTracker() {
         const allInvestmentsData = await api.fetchInvestments();
         const mappedAllInvestments = allInvestmentsData.map((inv: any) => ({
           ...inv,
+          investmentType: inv.investment_type || 'Self',
           month: new Date(inv.month + '-01'),
           createdAt: new Date(inv.created_at)
         }));
@@ -169,6 +170,7 @@ export default function FinanceTracker() {
         const investments = await api.fetchInvestments(monthKey);
         const mappedInvestments = investments.map((inv: any) => ({
           ...inv,
+          investmentType: inv.investment_type || 'Self',
           month: new Date(inv.month + '-01'),
           createdAt: new Date(inv.created_at)
         }));
@@ -417,6 +419,7 @@ export default function FinanceTracker() {
         const createdInvestment = await api.createInvestment(investmentData);
         newInvestments.push({
           ...createdInvestment,
+          investmentType: createdInvestment.investment_type || 'Self',
           month: new Date(createdInvestment.month + '-01'),
           createdAt: new Date(createdInvestment.created_at)
         });
@@ -552,6 +555,7 @@ export default function FinanceTracker() {
         name: investment.name,
         amount: investment.amount,
         category: investment.category,
+        investment_type: investment.investmentType || 'Self',
         month: api.formatMonthForAPI(investment.month),
         source_type: investment.sourceType
       };
@@ -559,6 +563,7 @@ export default function FinanceTracker() {
       const createdInvestment = await api.createInvestment(investmentData);
       const newInvestment = {
         ...createdInvestment,
+        investmentType: createdInvestment.investment_type || 'Self',
         month: new Date(createdInvestment.month + '-01'),
         createdAt: new Date(createdInvestment.created_at)
       };
@@ -578,6 +583,7 @@ export default function FinanceTracker() {
         name: investment.name,
         amount: investment.amount,
         category: investment.category,
+        investment_type: investment.investmentType || 'Self',
         month: api.formatMonthForAPI(investment.month),
         source_type: investment.sourceType
       };
@@ -585,6 +591,7 @@ export default function FinanceTracker() {
       const updatedInvestment = await api.updateInvestment(investmentData);
       const mappedInvestment = {
         ...updatedInvestment,
+        investmentType: updatedInvestment.investment_type || 'Self',
         month: new Date(updatedInvestment.month + '-01'),
         createdAt: new Date(updatedInvestment.created_at)
       };
