@@ -402,11 +402,14 @@ export default function FinanceTracker() {
           continue;
         }
 
+        // Debug: Log template item to verify investmentType
+        console.log('Template item:', item.name, 'investmentType:', item.investmentType);
+
         const investmentData = {
           name: item.name,
           amount: item.amount,
           category: item.category,
-          investment_type: item.investmentType,
+          investment_type: item.investmentType || 'Self',
           month: monthKey,
           source_type: 'template' as const
         };
