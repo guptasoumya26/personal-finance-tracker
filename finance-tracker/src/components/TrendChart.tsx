@@ -115,10 +115,15 @@ export default function TrendChart({ data, labels, color, type }: TrendChartProp
     },
   };
 
+  // Filter out zero values for more meaningful statistics
+  const nonZeroData = data.filter(val => val > 0);
+
   const stats = {
-    lowest: Math.min(...data),
-    highest: Math.max(...data),
-    average: data.reduce((sum, val) => sum + val, 0) / data.length,
+    lowest: nonZeroData.length > 0 ? Math.min(...nonZeroData) : 0,
+    highest: nonZeroData.length > 0 ? Math.max(...nonZeroData) : 0,
+    average: nonZeroData.length > 0
+      ? nonZeroData.reduce((sum, val) => sum + val, 0) / nonZeroData.length
+      : 0,
   };
 
   return (
