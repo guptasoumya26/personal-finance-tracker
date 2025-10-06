@@ -242,6 +242,42 @@ export async function deleteCreditCardEntry(id: string) {
   return true;
 }
 
+// Income API
+export async function fetchIncome(month?: string) {
+  const url = month ? `/api/income?month=${month}` : '/api/income';
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('Failed to fetch income');
+  }
+  const result = await response.json();
+  return result.data;
+}
+
+export async function createIncome(income: any) {
+  const response = await fetch('/api/income', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(income),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to create income');
+  }
+  const result = await response.json();
+  return result.data;
+}
+
+export async function deleteIncome(id: string) {
+  const response = await fetch(`/api/income?id=${id}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to delete income');
+  }
+  return true;
+}
+
 // Utility function to format month for API calls
 export function formatMonthForAPI(date: Date): string {
   const year = date.getFullYear();

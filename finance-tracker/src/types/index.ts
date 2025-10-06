@@ -124,3 +124,12 @@ export interface CreditCardEntry {
   createdAt: Date;
 }
 
+// Income Entry
+export interface Income {
+  id: string;
+  source: string;
+  amount: number;
+  month: Date;
+  createdAt: Date;
+}
+

@@ -12,9 +12,10 @@ import ExpensePieChart from '@/components/ExpensePieChart';
 import InvestmentPieChart from '@/components/InvestmentPieChart';
 import SelfInvestmentTrendChart from '@/components/SelfInvestmentTrendChart';
 import CreditCardTracker from '@/components/CreditCardTracker';
+import IncomeTracker from '@/components/IncomeTracker';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Toast from '@/components/Toast';
-import { Expense, Investment, CentralTemplate, CentralInvestmentTemplate, CreditCardEntry } from '@/types';
+import { Expense, Investment, CentralTemplate, CentralInvestmentTemplate, CreditCardEntry, Income } from '@/types';
 import { formatINR } from '@/utils/currency';
 import * as api from '@/lib/api';
 
@@ -39,6 +40,8 @@ export default function FinanceTracker() {
   const notesTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [creditCardEntries, setCreditCardEntries] = useState<CreditCardEntry[]>([]);
   const [loadingCreditCard, setLoadingCreditCard] = useState(false);
+  const [incomes, setIncomes] = useState<Income[]>([]);
+  const [loadingIncome, setLoadingIncome] = useState(false);
   const [toast, setToast] = useState<{
     message: string;
     type: 'success' | 'info' | 'warning';
@@ -194,12 +197,24 @@ export default function FinanceTracker() {
         setCreditCardEntries(mappedCreditCard);
         setLoadingCreditCard(false);
 
+        // Load income for current month
+        setLoadingIncome(true);
+        const incomeData = await api.fetchIncome(monthKey);
+        const mappedIncome = incomeData.map((income: any) => ({
+          ...income,
+          month: new Date(income.month + '-01'),
+          createdAt: new Date(income.created_at)
+        }));
+        setIncomes(mappedIncome);
+        setLoadingIncome(false);
+
       } catch (error) {
         console.error('Error loading monthly data:', error);
       } finally {
         setLoadingExpenses(false);
         setLoadingInvestments(false);
         setLoadingCreditCard(false);
+        setLoadingIncome(false);
       }
     };
 
@@ -681,6 +696,48 @@ export default function FinanceTracker() {
     }
   };
 
+  // Income handlers
+  const handleAddIncome = async (income: { source: string; amount: number }) => {
+    try {
+      setLoadingIncome(true);
+      const monthKey = api.formatMonthForAPI(currentMonth);
+
+      const createdIncome = await api.createIncome({
+        source: income.source,
+        amount: income.amount,
+        month: monthKey
+      });
+
+      const mappedIncome = {
+        ...createdIncome,
+        month: new Date(createdIncome.month + '-01'),
+        createdAt: new Date(createdIncome.created_at)
+      };
+
+      setIncomes(prev => [mappedIncome, ...prev]);
+      showToast('Income added successfully', 'success');
+    } catch (error) {
+      console.error('Error adding income:', error);
+      alert('Failed to add income. Please try again.');
+    } finally {
+      setLoadingIncome(false);
+    }
+  };
+
+  const handleDeleteIncome = async (id: string) => {
+    try {
+      setLoadingIncome(true);
+      await api.deleteIncome(id);
+      setIncomes(prev => prev.filter(income => income.id !== id));
+      showToast('Income deleted', 'success');
+    } catch (error) {
+      console.error('Error deleting income:', error);
+      alert('Failed to delete income. Please try again.');
+    } finally {
+      setLoadingIncome(false);
+    }
+  };
+
   const closeInvestmentForm = () => {
     setShowInvestmentForm(false);
     setEditingInvestment(null);
@@ -1005,6 +1062,17 @@ export default function FinanceTracker() {
                     </button>
                   </div>
                 )}
+              </div>
+
+              {/* Income Tracker - Full Width */}
+              <div className="mb-6">
+                <IncomeTracker
+                  incomes={incomes}
+                  totalExpenses={totalExpenses}
+                  onAddIncome={handleAddIncome}
+                  onDeleteIncome={handleDeleteIncome}
+                  loading={loadingIncome}
+                />
               </div>
 
         {/* Main Content Grid */}
