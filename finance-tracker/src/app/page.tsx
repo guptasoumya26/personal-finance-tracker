@@ -1,7 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Edit2, Trash2, Calendar, Settings, Menu, X, LogOut } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Edit2, Trash2, Calendar, Settings, Menu, X, LogOut, GripVertical } from 'lucide-react';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 // import RecurringTemplates from '@/components/RecurringTemplates';
 import CentralTemplateManager from '@/components/CentralTemplateManager';
 import CentralInvestmentTemplateManager from '@/components/CentralInvestmentTemplateManager';
@@ -61,6 +64,100 @@ export default function FinanceTracker() {
 
   const showToast = (message: string, type: 'success' | 'info' | 'warning' = 'success') => {
     setToast({ message, type, isVisible: true });
+  };
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Handle expense reorder
+  const handleExpenseDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = currentMonthExpenses.findIndex((exp) => exp.id === active.id);
+      const newIndex = currentMonthExpenses.findIndex((exp) => exp.id === over.id);
+
+      const reorderedExpenses = arrayMove(currentMonthExpenses, oldIndex, newIndex);
+
+      // Update display_order for all items
+      const updatedExpenses = reorderedExpenses.map((exp, index) => ({
+        ...exp,
+        displayOrder: index
+      }));
+
+      // Optimistically update UI
+      setMonthlyExpenses((prev) =>
+        prev.map((exp) => {
+          const updated = updatedExpenses.find((e) => e.id === exp.id);
+          return updated || exp;
+        })
+      );
+
+      // Send to backend
+      try {
+        await fetch('/api/expenses/reorder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            expenses: updatedExpenses.map((exp) => ({
+              id: exp.id,
+              display_order: exp.displayOrder
+            }))
+          })
+        });
+      } catch (error) {
+        console.error('Failed to reorder expenses:', error);
+        showToast('Failed to reorder expenses', 'warning');
+      }
+    }
+  };
+
+  // Handle investment reorder
+  const handleInvestmentDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = currentMonthInvestments.findIndex((inv) => inv.id === active.id);
+      const newIndex = currentMonthInvestments.findIndex((inv) => inv.id === over.id);
+
+      const reorderedInvestments = arrayMove(currentMonthInvestments, oldIndex, newIndex);
+
+      // Update display_order for all items
+      const updatedInvestments = reorderedInvestments.map((inv, index) => ({
+        ...inv,
+        displayOrder: index
+      }));
+
+      // Optimistically update UI
+      setMonthlyInvestments((prev) =>
+        prev.map((inv) => {
+          const updated = updatedInvestments.find((i) => i.id === inv.id);
+          return updated || inv;
+        })
+      );
+
+      // Send to backend
+      try {
+        await fetch('/api/investments/reorder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            investments: updatedInvestments.map((inv) => ({
+              id: inv.id,
+              display_order: inv.displayOrder
+            }))
+          })
+        });
+      } catch (error) {
+        console.error('Failed to reorder investments:', error);
+        showToast('Failed to reorder investments', 'warning');
+      }
+    }
   };
 
   // Fuzzy matching function - checks if names are similar (5+ characters match)
@@ -170,6 +267,7 @@ export default function FinanceTracker() {
         const expenses = await api.fetchExpenses(monthKey);
         const mappedExpenses = expenses.map((exp: any) => ({
           ...exp,
+          displayOrder: exp.display_order ?? 0,
           month: new Date(exp.month + '-01'),
           createdAt: new Date(exp.created_at)
         }));
@@ -180,6 +278,7 @@ export default function FinanceTracker() {
         const mappedInvestments = investments.map((inv: any) => ({
           ...inv,
           investmentType: inv.investment_type || 'Self',
+          displayOrder: inv.display_order ?? 0,
           month: new Date(inv.month + '-01'),
           createdAt: new Date(inv.created_at)
         }));
@@ -820,7 +919,7 @@ export default function FinanceTracker() {
       exp.month.getMonth() === currentMonth.getMonth() &&
       exp.month.getFullYear() === currentMonth.getFullYear()
     )
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0) || a.name.localeCompare(b.name));
   const totalExpenses = currentMonthExpenses.reduce((sum, exp) => sum + exp.amount, 0);
 
   const currentMonthInvestments = monthlyInvestments
@@ -828,7 +927,7 @@ export default function FinanceTracker() {
       inv.month.getMonth() === currentMonth.getMonth() &&
       inv.month.getFullYear() === currentMonth.getFullYear()
     )
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0) || a.name.localeCompare(b.name));
   const totalInvestments = currentMonthInvestments.reduce((sum, inv) => sum + inv.amount, 0);
 
   // Calculate chart data from database
@@ -889,6 +988,137 @@ export default function FinanceTracker() {
       </div>
     );
   }
+
+  // Sortable Expense Item Component
+  const SortableExpenseItem = ({ expense }: { expense: Expense }) => {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({ id: expense.id });
+
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0.5 : 1,
+    };
+
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        className="flex items-center justify-between p-2 sm:p-3 bg-gray-700 rounded-lg"
+      >
+        <button
+          className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-600 rounded text-gray-400 hover:text-white transition-colors mr-2"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="w-4 h-4" />
+        </button>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="font-medium text-sm sm:text-base truncate">{expense.name}</p>
+            {expense.sourceType === 'template' && (
+              <span className="text-xs bg-blue-600 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded whitespace-nowrap">
+                Template
+              </span>
+            )}
+          </div>
+          <p className="text-gray-400 text-xs sm:text-sm truncate">{expense.category}</p>
+        </div>
+        <div className="flex items-center gap-2 sm:gap-3 ml-2">
+          <p className="text-green-400 font-semibold text-sm sm:text-base">{formatINR(expense.amount)}</p>
+          <div className="flex gap-1">
+            <button
+              onClick={() => openEditExpenseForm(expense)}
+              className="p-1 hover:bg-gray-600 rounded text-gray-400 hover:text-white transition-colors"
+            >
+              <Edit2 className="w-3 h-3 sm:w-4 sm:h-4" />
+            </button>
+            <button
+              onClick={() => handleDeleteExpense(expense.id)}
+              className="p-1 hover:bg-gray-600 rounded text-gray-400 hover:text-red-400 transition-colors"
+            >
+              <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Sortable Investment Item Component
+  const SortableInvestmentItem = ({ investment }: { investment: Investment }) => {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({ id: investment.id });
+
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0.5 : 1,
+    };
+
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        className="flex items-center justify-between p-2 sm:p-3 bg-gray-700 rounded-lg"
+      >
+        <button
+          className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-600 rounded text-gray-400 hover:text-white transition-colors mr-2"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="w-4 h-4" />
+        </button>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="font-medium text-sm sm:text-base truncate">{investment.name}</p>
+            {investment.sourceType === 'template' && (
+              <span className="text-xs bg-blue-600 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded whitespace-nowrap">
+                Template
+              </span>
+            )}
+            <span className={`text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded whitespace-nowrap ${
+              investment.investmentType === 'Self' ? 'bg-green-600 text-white' :
+              investment.investmentType === 'Combined' ? 'bg-purple-600 text-white' :
+              'bg-gray-600 text-white'
+            }`}>
+              {investment.investmentType || 'Self'}
+            </span>
+          </div>
+          <p className="text-gray-400 text-xs sm:text-sm truncate">{investment.category}</p>
+        </div>
+        <div className="flex items-center gap-2 sm:gap-3 ml-2">
+          <p className="text-blue-400 font-semibold text-sm sm:text-base">{formatINR(investment.amount)}</p>
+          <div className="flex gap-1">
+            <button
+              onClick={() => openEditInvestmentForm(investment)}
+              className="p-1 hover:bg-gray-600 rounded text-gray-400 hover:text-white transition-colors"
+            >
+              <Edit2 className="w-3 h-3 sm:w-4 sm:h-4" />
+            </button>
+            <button
+              onClick={() => handleDeleteInvestment(investment.id)}
+              className="p-1 hover:bg-gray-600 rounded text-gray-400 hover:text-red-400 transition-colors"
+            >
+              <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex">
@@ -1181,38 +1411,22 @@ export default function FinanceTracker() {
                     <LoadingSpinner />
                   </div>
                 ) : currentMonthExpenses.length > 0 ? (
-                  currentMonthExpenses.map((expense) => (
-                    <div key={expense.id} className="flex items-center justify-between p-2 sm:p-3 bg-gray-700 rounded-lg">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="font-medium text-sm sm:text-base truncate">{expense.name}</p>
-                          {expense.sourceType === 'template' && (
-                            <span className="text-xs bg-blue-600 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded whitespace-nowrap">
-                              Template
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-gray-400 text-xs sm:text-sm truncate">{expense.category}</p>
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleExpenseDragEnd}
+                  >
+                    <SortableContext
+                      items={currentMonthExpenses.map((exp) => exp.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <div className="space-y-2 sm:space-y-3">
+                        {currentMonthExpenses.map((expense) => (
+                          <SortableExpenseItem key={expense.id} expense={expense} />
+                        ))}
                       </div>
-                      <div className="flex items-center gap-2 sm:gap-3 ml-2">
-                        <p className="text-green-400 font-semibold text-sm sm:text-base">{formatINR(expense.amount)}</p>
-                        <div className="flex gap-1">
-                          <button
-                            onClick={() => openEditExpenseForm(expense)}
-                            className="p-1 hover:bg-gray-600 rounded text-gray-400 hover:text-white transition-colors"
-                          >
-                            <Edit2 className="w-3 h-3 sm:w-4 sm:h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteExpense(expense.id)}
-                            className="p-1 hover:bg-gray-600 rounded text-gray-400 hover:text-red-400 transition-colors"
-                          >
-                            <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))
+                    </SortableContext>
+                  </DndContext>
                 ) : (
                   <div className="text-center text-gray-400 py-6 sm:py-8">
                     <p className="text-sm sm:text-base">No expenses recorded this month</p>
@@ -1280,45 +1494,22 @@ export default function FinanceTracker() {
                     <LoadingSpinner />
                   </div>
                 ) : currentMonthInvestments.length > 0 ? (
-                  currentMonthInvestments.map((investment) => (
-                    <div key={investment.id} className="flex items-center justify-between p-2 sm:p-3 bg-gray-700 rounded-lg">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="font-medium text-sm sm:text-base truncate">{investment.name}</p>
-                          {investment.sourceType === 'template' && (
-                            <span className="text-xs bg-blue-600 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded whitespace-nowrap">
-                              Template
-                            </span>
-                          )}
-                          <span className={`text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded whitespace-nowrap ${
-                            investment.investmentType === 'Self' ? 'bg-green-600 text-white' :
-                            investment.investmentType === 'Combined' ? 'bg-purple-600 text-white' :
-                            'bg-gray-600 text-white'
-                          }`}>
-                            {investment.investmentType || 'Self'}
-                          </span>
-                        </div>
-                        <p className="text-gray-400 text-xs sm:text-sm truncate">{investment.category}</p>
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleInvestmentDragEnd}
+                  >
+                    <SortableContext
+                      items={currentMonthInvestments.map((inv) => inv.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <div className="space-y-2 sm:space-y-3">
+                        {currentMonthInvestments.map((investment) => (
+                          <SortableInvestmentItem key={investment.id} investment={investment} />
+                        ))}
                       </div>
-                      <div className="flex items-center gap-2 sm:gap-3 ml-2">
-                        <p className="text-blue-400 font-semibold text-sm sm:text-base">{formatINR(investment.amount)}</p>
-                        <div className="flex gap-1">
-                          <button
-                            onClick={() => openEditInvestmentForm(investment)}
-                            className="p-1 hover:bg-gray-600 rounded text-gray-400 hover:text-white transition-colors"
-                          >
-                            <Edit2 className="w-3 h-3 sm:w-4 sm:h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteInvestment(investment.id)}
-                            className="p-1 hover:bg-gray-600 rounded text-gray-400 hover:text-red-400 transition-colors"
-                          >
-                            <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))
+                    </SortableContext>
+                  </DndContext>
                 ) : (
                   <div className="text-center text-gray-400 py-6 sm:py-8">
                     <p className="text-sm sm:text-base">No investments recorded this month</p>

@@ -92,6 +92,7 @@ export interface Expense {
   month: Date;
   sourceType: 'manual' | 'template';
   monthlyTemplateInstanceId?: string; // Link to template instance
+  displayOrder?: number;
   createdAt: Date;
 }
 
@@ -104,6 +105,7 @@ export interface Investment {
   month: Date;
   sourceType: 'manual' | 'template';
   monthlyTemplateInstanceId?: string;
+  displayOrder?: number;
   createdAt: Date;
 }
 
