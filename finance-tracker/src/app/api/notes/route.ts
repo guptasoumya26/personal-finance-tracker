@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
   try {
     const user = await requireAuth(request);
     const body = await request.json();
-    const { content, month } = body;
+    const { content, month, credit_card_tracker_title } = body;
 
     // Check if note already exists for this user and month
     const { data: existing } = await supabase
@@ -56,18 +56,26 @@ export async function POST(request: NextRequest) {
     let result;
     if (existing) {
       // Update existing note
+      const updateData: any = { content, updated_at: new Date().toISOString() };
+      if (credit_card_tracker_title !== undefined) {
+        updateData.credit_card_tracker_title = credit_card_tracker_title;
+      }
       result = await supabase
         .from('notes')
-        .update({ content, updated_at: new Date().toISOString() })
+        .update(updateData)
         .eq('id', existing.id)
         .eq('user_id', user.id) // Double-check user ownership
         .select()
         .single();
     } else {
       // Create new note
+      const insertData: any = { user_id: user.id, content, month };
+      if (credit_card_tracker_title !== undefined) {
+        insertData.credit_card_tracker_title = credit_card_tracker_title;
+      }
       result = await supabase
         .from('notes')
-        .insert({ user_id: user.id, content, month })
+        .insert(insertData)
         .select()
         .single();
     }

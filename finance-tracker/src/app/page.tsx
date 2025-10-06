@@ -37,6 +37,7 @@ export default function FinanceTracker() {
   const [showInvestmentForm, setShowInvestmentForm] = useState(false);
   const [editingInvestment, setEditingInvestment] = useState<Investment | null>(null);
   const [currentNote, setCurrentNote] = useState<string>('');
+  const [creditCardTitle, setCreditCardTitle] = useState<string>('Credit Card Bill Tracker');
   const notesTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [creditCardEntries, setCreditCardEntries] = useState<CreditCardEntry[]>([]);
   const [loadingCreditCard, setLoadingCreditCard] = useState(false);
@@ -187,6 +188,7 @@ export default function FinanceTracker() {
         // Load note for current month
         const note = await api.fetchNote(monthKey);
         setCurrentNote(note?.content || '');
+        setCreditCardTitle(note?.credit_card_tracker_title || 'Credit Card Bill Tracker');
 
         // Load credit card entries for current month
         setLoadingCreditCard(true);
@@ -794,6 +796,19 @@ export default function FinanceTracker() {
     }
   };
 
+  // Credit Card Title handler
+  const handleCreditCardTitleChange = async (newTitle: string) => {
+    try {
+      const monthKey = api.formatMonthForAPI(currentMonth);
+      await api.saveNote(currentNote, monthKey, newTitle);
+      setCreditCardTitle(newTitle);
+      showToast('Title saved successfully', 'success');
+    } catch (error) {
+      console.error('Error saving credit card title:', error);
+      alert('Failed to save title. Please try again.');
+    }
+  };
+
   const closeInvestmentForm = () => {
     setShowInvestmentForm(false);
     setEditingInvestment(null);
@@ -1221,6 +1236,8 @@ export default function FinanceTracker() {
                   onAddEntry={handleAddCreditCardEntry}
                   onDeleteEntry={handleDeleteCreditCardEntry}
                   loading={loadingCreditCard}
+                  title={creditCardTitle}
+                  onTitleChange={handleCreditCardTitleChange}
                 />
               </div>
 

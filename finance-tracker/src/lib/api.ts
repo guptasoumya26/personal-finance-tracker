@@ -191,13 +191,17 @@ export async function fetchNote(month: string) {
   return result.data;
 }
 
-export async function saveNote(content: string, month: string) {
+export async function saveNote(content: string, month: string, credit_card_tracker_title?: string) {
+  const body: any = { content, month };
+  if (credit_card_tracker_title !== undefined) {
+    body.credit_card_tracker_title = credit_card_tracker_title;
+  }
   const response = await fetch('/api/notes', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ content, month }),
+    body: JSON.stringify(body),
   });
   if (!response.ok) {
     throw new Error('Failed to save note');

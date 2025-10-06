@@ -3,28 +3,42 @@
 import { useState } from 'react';
 import { CreditCardEntry } from '@/types';
 import { formatINR } from '@/utils/currency';
-import { Trash2, Plus, CreditCard } from 'lucide-react';
+import { Trash2, Plus, CreditCard, Edit2, Check } from 'lucide-react';
 
 interface CreditCardTrackerProps {
   entries: CreditCardEntry[];
   onAddEntry: (entry: { description: string; amount: number }) => void;
   onDeleteEntry: (id: string) => void;
   loading: boolean;
+  title: string;
+  onTitleChange: (newTitle: string) => void;
 }
 
 export default function CreditCardTracker({
   entries,
   onAddEntry,
   onDeleteEntry,
-  loading
+  loading,
+  title,
+  onTitleChange
 }: CreditCardTrackerProps) {
   const [showForm, setShowForm] = useState(false);
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
-  const [title, setTitle] = useState('Credit Card Bill Tracker');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(title);
 
   const totalBill = entries.reduce((sum, entry) => sum + entry.amount, 0);
+
+  const handleSaveTitle = () => {
+    onTitleChange(editedTitle);
+    setIsEditingTitle(false);
+  };
+
+  const handleCancelEdit = () => {
+    setEditedTitle(title);
+    setIsEditingTitle(false);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,27 +64,52 @@ export default function CreditCardTracker({
         <div className="flex items-center gap-2">
           <CreditCard className="text-blue-400" size={24} />
           {isEditingTitle ? (
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              onBlur={() => setIsEditingTitle(false)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  setIsEditingTitle(false);
-                }
-              }}
-              autoFocus
-              className="text-xl font-semibold text-white bg-gray-700 px-2 py-1 rounded border border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={editedTitle}
+                onChange={(e) => setEditedTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSaveTitle();
+                  } else if (e.key === 'Escape') {
+                    handleCancelEdit();
+                  }
+                }}
+                autoFocus
+                className="text-xl font-semibold text-white bg-gray-700 px-3 py-1 rounded border border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                onClick={handleSaveTitle}
+                className="p-1.5 bg-green-600 hover:bg-green-700 text-white rounded transition-colors"
+                title="Save"
+              >
+                <Check size={18} />
+              </button>
+              <button
+                onClick={handleCancelEdit}
+                className="p-1.5 bg-gray-600 hover:bg-gray-500 text-white rounded transition-colors"
+                title="Cancel"
+              >
+                ✕
+              </button>
+            </div>
           ) : (
-            <h2
-              className="text-xl font-semibold text-white cursor-pointer hover:text-blue-400 transition-colors"
-              onClick={() => setIsEditingTitle(true)}
-              title="Click to edit"
-            >
-              {title}
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-semibold text-white">
+                {title}
+              </h2>
+              <button
+                onClick={() => {
+                  setEditedTitle(title);
+                  setIsEditingTitle(true);
+                }}
+                className="p-1 text-blue-400 hover:text-blue-300 hover:bg-blue-400/10 rounded transition-colors"
+                title="Edit title"
+              >
+                <Edit2 size={16} />
+              </button>
+            </div>
           )}
         </div>
         <button
