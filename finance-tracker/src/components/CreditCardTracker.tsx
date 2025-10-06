@@ -21,6 +21,8 @@ export default function CreditCardTracker({
   const [showForm, setShowForm] = useState(false);
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
+  const [title, setTitle] = useState('Credit Card Bill Tracker');
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
 
   const totalBill = entries.reduce((sum, entry) => sum + entry.amount, 0);
 
@@ -47,7 +49,29 @@ export default function CreditCardTracker({
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <CreditCard className="text-blue-400" size={24} />
-          <h2 className="text-xl font-semibold text-white">Credit Card Bill Tracker</h2>
+          {isEditingTitle ? (
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onBlur={() => setIsEditingTitle(false)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  setIsEditingTitle(false);
+                }
+              }}
+              autoFocus
+              className="text-xl font-semibold text-white bg-gray-700 px-2 py-1 rounded border border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          ) : (
+            <h2
+              className="text-xl font-semibold text-white cursor-pointer hover:text-blue-400 transition-colors"
+              onClick={() => setIsEditingTitle(true)}
+              title="Click to edit"
+            >
+              {title}
+            </h2>
+          )}
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
