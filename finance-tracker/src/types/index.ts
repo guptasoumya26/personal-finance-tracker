@@ -133,3 +133,12 @@ export interface Income {
   createdAt: Date;
 }
 
+// External Investment Buffer Entry
+export interface ExternalInvestmentBuffer {
+  id: string;
+  description: string;
+  amount: number;
+  month: Date;
+  createdAt: Date;
+}
+

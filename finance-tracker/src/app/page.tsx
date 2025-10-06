@@ -15,7 +15,7 @@ import CreditCardTracker from '@/components/CreditCardTracker';
 import IncomeTracker from '@/components/IncomeTracker';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Toast from '@/components/Toast';
-import { Expense, Investment, CentralTemplate, CentralInvestmentTemplate, CreditCardEntry, Income } from '@/types';
+import { Expense, Investment, CentralTemplate, CentralInvestmentTemplate, CreditCardEntry, Income, ExternalInvestmentBuffer } from '@/types';
 import { formatINR } from '@/utils/currency';
 import * as api from '@/lib/api';
 
@@ -42,6 +42,8 @@ export default function FinanceTracker() {
   const [loadingCreditCard, setLoadingCreditCard] = useState(false);
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [loadingIncome, setLoadingIncome] = useState(false);
+  const [externalBuffers, setExternalBuffers] = useState<ExternalInvestmentBuffer[]>([]);
+  const [loadingExternalBuffer, setLoadingExternalBuffer] = useState(false);
   const [toast, setToast] = useState<{
     message: string;
     type: 'success' | 'info' | 'warning';
@@ -208,6 +210,17 @@ export default function FinanceTracker() {
         setIncomes(mappedIncome);
         setLoadingIncome(false);
 
+        // Load external investment buffer for current month
+        setLoadingExternalBuffer(true);
+        const externalBufferData = await api.fetchExternalInvestmentBuffer(monthKey);
+        const mappedExternalBuffer = externalBufferData.map((buffer: any) => ({
+          ...buffer,
+          month: new Date(buffer.month + '-01'),
+          createdAt: new Date(buffer.created_at)
+        }));
+        setExternalBuffers(mappedExternalBuffer);
+        setLoadingExternalBuffer(false);
+
       } catch (error) {
         console.error('Error loading monthly data:', error);
       } finally {
@@ -215,6 +228,7 @@ export default function FinanceTracker() {
         setLoadingInvestments(false);
         setLoadingCreditCard(false);
         setLoadingIncome(false);
+        setLoadingExternalBuffer(false);
       }
     };
 
@@ -738,6 +752,48 @@ export default function FinanceTracker() {
     }
   };
 
+  // External Investment Buffer handlers
+  const handleAddExternalBuffer = async (buffer: { description: string; amount: number }) => {
+    try {
+      setLoadingExternalBuffer(true);
+      const monthKey = api.formatMonthForAPI(currentMonth);
+
+      const createdBuffer = await api.createExternalInvestmentBuffer({
+        description: buffer.description,
+        amount: buffer.amount,
+        month: monthKey
+      });
+
+      const mappedBuffer = {
+        ...createdBuffer,
+        month: new Date(createdBuffer.month + '-01'),
+        createdAt: new Date(createdBuffer.created_at)
+      };
+
+      setExternalBuffers(prev => [mappedBuffer, ...prev]);
+      showToast('External buffer added successfully', 'success');
+    } catch (error) {
+      console.error('Error adding external buffer:', error);
+      alert('Failed to add external buffer. Please try again.');
+    } finally {
+      setLoadingExternalBuffer(false);
+    }
+  };
+
+  const handleDeleteExternalBuffer = async (id: string) => {
+    try {
+      setLoadingExternalBuffer(true);
+      await api.deleteExternalInvestmentBuffer(id);
+      setExternalBuffers(prev => prev.filter(buffer => buffer.id !== id));
+      showToast('External buffer deleted', 'success');
+    } catch (error) {
+      console.error('Error deleting external buffer:', error);
+      alert('Failed to delete external buffer. Please try again.');
+    } finally {
+      setLoadingExternalBuffer(false);
+    }
+  };
+
   const closeInvestmentForm = () => {
     setShowInvestmentForm(false);
     setEditingInvestment(null);
@@ -1068,10 +1124,14 @@ export default function FinanceTracker() {
               <div className="mb-6">
                 <IncomeTracker
                   incomes={incomes}
+                  externalBuffers={externalBuffers}
                   totalExpenses={totalExpenses}
                   onAddIncome={handleAddIncome}
                   onDeleteIncome={handleDeleteIncome}
+                  onAddExternalBuffer={handleAddExternalBuffer}
+                  onDeleteExternalBuffer={handleDeleteExternalBuffer}
                   loading={loadingIncome}
+                  loadingExternal={loadingExternalBuffer}
                 />
               </div>
 

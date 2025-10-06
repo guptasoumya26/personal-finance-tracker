@@ -1,31 +1,44 @@
 'use client';
 
 import { useState } from 'react';
-import { Income } from '@/types';
+import { Income, ExternalInvestmentBuffer } from '@/types';
 import { formatINR } from '@/utils/currency';
-import { Trash2, Plus, DollarSign, TrendingUp } from 'lucide-react';
+import { Trash2, Plus, DollarSign, TrendingUp, Wallet } from 'lucide-react';
 
 interface IncomeTrackerProps {
   incomes: Income[];
+  externalBuffers: ExternalInvestmentBuffer[];
   totalExpenses: number;
   onAddIncome: (income: { source: string; amount: number }) => void;
   onDeleteIncome: (id: string) => void;
+  onAddExternalBuffer: (buffer: { description: string; amount: number }) => void;
+  onDeleteExternalBuffer: (id: string) => void;
   loading: boolean;
+  loadingExternal: boolean;
 }
 
 export default function IncomeTracker({
   incomes,
+  externalBuffers,
   totalExpenses,
   onAddIncome,
   onDeleteIncome,
-  loading
+  onAddExternalBuffer,
+  onDeleteExternalBuffer,
+  loading,
+  loadingExternal
 }: IncomeTrackerProps) {
   const [showForm, setShowForm] = useState(false);
+  const [showExternalForm, setShowExternalForm] = useState(false);
   const [source, setSource] = useState('');
   const [amount, setAmount] = useState('');
+  const [externalDesc, setExternalDesc] = useState('');
+  const [externalAmount, setExternalAmount] = useState('');
 
   const totalIncome = incomes.reduce((sum, income) => sum + income.amount, 0);
   const investmentBuffer = totalIncome - totalExpenses;
+  const externalBuffer = externalBuffers.reduce((sum, buffer) => sum + buffer.amount, 0);
+  const totalInvestmentBuffer = investmentBuffer + externalBuffer;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,6 +56,24 @@ export default function IncomeTracker({
     setSource('');
     setAmount('');
     setShowForm(false);
+  };
+
+  const handleExternalSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!externalDesc.trim() || !externalAmount) {
+      alert('Please fill in all fields');
+      return;
+    }
+
+    onAddExternalBuffer({
+      description: externalDesc.trim(),
+      amount: parseFloat(externalAmount)
+    });
+
+    setExternalDesc('');
+    setExternalAmount('');
+    setShowExternalForm(false);
   };
 
   return (
@@ -154,7 +185,7 @@ export default function IncomeTracker({
           </span>
         </div>
 
-        {/* Investment Buffer */}
+        {/* Investment Buffer (Income - Expenses) */}
         <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-900/30 to-blue-900/30 rounded-lg border border-purple-500/30">
           <div className="flex items-center gap-2">
             <TrendingUp className="text-purple-400" size={20} />
@@ -167,6 +198,123 @@ export default function IncomeTracker({
         <p className="text-xs text-gray-400 italic">
           Investment Buffer = Total Income - Total Expenses
         </p>
+      </div>
+
+      {/* External Investment Buffer Section */}
+      <div className="mt-6 pt-6 border-t border-gray-600">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Wallet className="text-cyan-400" size={24} />
+            <h3 className="text-lg font-semibold text-white">External Investment Buffer</h3>
+          </div>
+          <button
+            onClick={() => setShowExternalForm(!showExternalForm)}
+            disabled={loadingExternal}
+            className="flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors disabled:opacity-50"
+          >
+            <Plus size={20} />
+            Add Buffer
+          </button>
+        </div>
+
+        {/* Add External Buffer Form */}
+        {showExternalForm && (
+          <form onSubmit={handleExternalSubmit} className="mb-4 p-4 bg-gray-700 rounded-lg">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Description
+                </label>
+                <input
+                  type="text"
+                  value={externalDesc}
+                  onChange={(e) => setExternalDesc(e.target.value)}
+                  placeholder="e.g., Emergency Fund, Savings"
+                  className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Amount (₹)
+                </label>
+                <input
+                  type="number"
+                  value={externalAmount}
+                  onChange={(e) => setExternalAmount(e.target.value)}
+                  placeholder="0.00"
+                  step="0.01"
+                  className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <button
+                type="submit"
+                className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors"
+              >
+                Add Buffer
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowExternalForm(false);
+                  setExternalDesc('');
+                  setExternalAmount('');
+                }}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* External Buffer Entries List */}
+        <div className="space-y-2 mb-4">
+          {externalBuffers.length === 0 ? (
+            <p className="text-gray-400 text-center py-4">No external buffer entries</p>
+          ) : (
+            externalBuffers.map((buffer) => (
+              <div
+                key={buffer.id}
+                className="flex items-center justify-between p-3 bg-gray-700 rounded-lg hover:bg-gray-650 transition-colors"
+              >
+                <div className="flex-1">
+                  <p className="text-white font-medium">{buffer.description}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-cyan-400 font-semibold">
+                    {formatINR(buffer.amount)}
+                  </span>
+                  <button
+                    onClick={() => onDeleteExternalBuffer(buffer.id)}
+                    disabled={loadingExternal}
+                    className="p-1 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded transition-colors disabled:opacity-50"
+                    title="Delete buffer entry"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Total Investment Buffer */}
+        <div className="pt-4 border-t border-gray-600">
+          <div className="flex items-center justify-between p-4 bg-gradient-to-r from-indigo-900/40 to-cyan-900/40 rounded-lg border-2 border-cyan-500/50">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="text-cyan-300" size={24} />
+              <span className="text-xl font-bold text-cyan-200">Total Investment Buffer:</span>
+            </div>
+            <span className={`text-3xl font-bold ${totalInvestmentBuffer >= 0 ? 'text-cyan-300' : 'text-red-400'}`}>
+              {formatINR(totalInvestmentBuffer)}
+            </span>
+          </div>
+          <p className="text-xs text-gray-400 italic mt-2">
+            Total = Investment Buffer ({formatINR(investmentBuffer)}) + External Buffer ({formatINR(externalBuffer)})
+          </p>
+        </div>
       </div>
     </div>
   );

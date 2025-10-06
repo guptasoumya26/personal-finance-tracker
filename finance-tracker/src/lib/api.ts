@@ -278,6 +278,42 @@ export async function deleteIncome(id: string) {
   return true;
 }
 
+// External Investment Buffer API
+export async function fetchExternalInvestmentBuffer(month?: string) {
+  const url = month ? `/api/external-investment-buffer?month=${month}` : '/api/external-investment-buffer';
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('Failed to fetch external investment buffer');
+  }
+  const result = await response.json();
+  return result.data;
+}
+
+export async function createExternalInvestmentBuffer(buffer: any) {
+  const response = await fetch('/api/external-investment-buffer', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(buffer),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to create external investment buffer');
+  }
+  const result = await response.json();
+  return result.data;
+}
+
+export async function deleteExternalInvestmentBuffer(id: string) {
+  const response = await fetch(`/api/external-investment-buffer?id=${id}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to delete external investment buffer');
+  }
+  return true;
+}
+
 // Utility function to format month for API calls
 export function formatMonthForAPI(date: Date): string {
   const year = date.getFullYear();
