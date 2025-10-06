@@ -46,13 +46,13 @@ export default function CreditCardTracker({
     <div className="bg-gray-800 rounded-lg p-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <CreditCard className="text-yellow-400" size={24} />
+          <CreditCard className="text-blue-400" size={24} />
           <h2 className="text-xl font-semibold text-white">Credit Card Bill Tracker</h2>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
           disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
         >
           <Plus size={20} />
           Add Purchase
@@ -72,7 +72,7 @@ export default function CreditCardTracker({
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="e.g., Amazon Purchase"
-                className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div>
@@ -85,14 +85,14 @@ export default function CreditCardTracker({
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0.00"
                 step="0.01"
-                className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
           <div className="flex gap-2 mt-4">
             <button
               type="submit"
-              className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               Add Entry
             </button>
@@ -125,7 +125,7 @@ export default function CreditCardTracker({
                 <p className="text-white font-medium">{entry.description}</p>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-yellow-400 font-semibold">
+                <span className="text-blue-400 font-semibold">
                   {formatINR(entry.amount)}
                 </span>
                 <button
@@ -146,7 +146,7 @@ export default function CreditCardTracker({
       <div className="pt-4 border-t border-gray-600">
         <div className="flex items-center justify-between">
           <span className="text-lg font-semibold text-gray-300">Expected Credit Card Bill:</span>
-          <span className="text-2xl font-bold text-yellow-400">
+          <span className="text-2xl font-bold text-blue-400">
             {formatINR(totalBill)}
           </span>
         </div>
