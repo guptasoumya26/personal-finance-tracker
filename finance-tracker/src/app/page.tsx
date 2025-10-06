@@ -11,9 +11,10 @@ import TrendChart from '@/components/TrendChart';
 import ExpensePieChart from '@/components/ExpensePieChart';
 import InvestmentPieChart from '@/components/InvestmentPieChart';
 import SelfInvestmentTrendChart from '@/components/SelfInvestmentTrendChart';
+import CreditCardTracker from '@/components/CreditCardTracker';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Toast from '@/components/Toast';
-import { Expense, Investment, CentralTemplate, CentralInvestmentTemplate } from '@/types';
+import { Expense, Investment, CentralTemplate, CentralInvestmentTemplate, CreditCardEntry } from '@/types';
 import { formatINR } from '@/utils/currency';
 import * as api from '@/lib/api';
 
@@ -36,6 +37,8 @@ export default function FinanceTracker() {
   const [editingInvestment, setEditingInvestment] = useState<Investment | null>(null);
   const [currentNote, setCurrentNote] = useState<string>('');
   const notesTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [creditCardEntries, setCreditCardEntries] = useState<CreditCardEntry[]>([]);
+  const [loadingCreditCard, setLoadingCreditCard] = useState(false);
   const [toast, setToast] = useState<{
     message: string;
     type: 'success' | 'info' | 'warning';
@@ -180,11 +183,23 @@ export default function FinanceTracker() {
         const note = await api.fetchNote(monthKey);
         setCurrentNote(note?.content || '');
 
+        // Load credit card entries for current month
+        setLoadingCreditCard(true);
+        const creditCardData = await api.fetchCreditCardEntries(monthKey);
+        const mappedCreditCard = creditCardData.map((entry: any) => ({
+          ...entry,
+          month: new Date(entry.month + '-01'),
+          createdAt: new Date(entry.created_at)
+        }));
+        setCreditCardEntries(mappedCreditCard);
+        setLoadingCreditCard(false);
+
       } catch (error) {
         console.error('Error loading monthly data:', error);
       } finally {
         setLoadingExpenses(false);
         setLoadingInvestments(false);
+        setLoadingCreditCard(false);
       }
     };
 
@@ -624,6 +639,48 @@ export default function FinanceTracker() {
     setShowInvestmentForm(true);
   };
 
+  // Credit Card Entry handlers
+  const handleAddCreditCardEntry = async (entry: { description: string; amount: number }) => {
+    try {
+      setLoadingCreditCard(true);
+      const monthKey = api.formatMonthForAPI(currentMonth);
+
+      const createdEntry = await api.createCreditCardEntry({
+        description: entry.description,
+        amount: entry.amount,
+        month: monthKey
+      });
+
+      const mappedEntry = {
+        ...createdEntry,
+        month: new Date(createdEntry.month + '-01'),
+        createdAt: new Date(createdEntry.created_at)
+      };
+
+      setCreditCardEntries(prev => [mappedEntry, ...prev]);
+      showToast('Credit card entry added successfully', 'success');
+    } catch (error) {
+      console.error('Error adding credit card entry:', error);
+      alert('Failed to add credit card entry. Please try again.');
+    } finally {
+      setLoadingCreditCard(false);
+    }
+  };
+
+  const handleDeleteCreditCardEntry = async (id: string) => {
+    try {
+      setLoadingCreditCard(true);
+      await api.deleteCreditCardEntry(id);
+      setCreditCardEntries(prev => prev.filter(entry => entry.id !== id));
+      showToast('Credit card entry deleted', 'success');
+    } catch (error) {
+      console.error('Error deleting credit card entry:', error);
+      alert('Failed to delete credit card entry. Please try again.');
+    } finally {
+      setLoadingCreditCard(false);
+    }
+  };
+
   const closeInvestmentForm = () => {
     setShowInvestmentForm(false);
     setEditingInvestment(null);
@@ -1026,6 +1083,16 @@ export default function FinanceTracker() {
                 <ExpensePieChart
                   expenses={currentMonthExpenses}
                   monthName={formatMonth(currentMonth)}
+                />
+              </div>
+
+              {/* Credit Card Bill Tracker */}
+              <div className="mb-6">
+                <CreditCardTracker
+                  entries={creditCardEntries}
+                  onAddEntry={handleAddCreditCardEntry}
+                  onDeleteEntry={handleDeleteCreditCardEntry}
+                  loading={loadingCreditCard}
                 />
               </div>
 

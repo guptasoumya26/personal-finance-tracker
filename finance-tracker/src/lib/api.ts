@@ -206,6 +206,42 @@ export async function saveNote(content: string, month: string) {
   return result.data;
 }
 
+// Credit Card Entries API
+export async function fetchCreditCardEntries(month?: string) {
+  const url = month ? `/api/credit-card-entries?month=${month}` : '/api/credit-card-entries';
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('Failed to fetch credit card entries');
+  }
+  const result = await response.json();
+  return result.data;
+}
+
+export async function createCreditCardEntry(entry: any) {
+  const response = await fetch('/api/credit-card-entries', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(entry),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to create credit card entry');
+  }
+  const result = await response.json();
+  return result.data;
+}
+
+export async function deleteCreditCardEntry(id: string) {
+  const response = await fetch(`/api/credit-card-entries?id=${id}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to delete credit card entry');
+  }
+  return true;
+}
+
 // Utility function to format month for API calls
 export function formatMonthForAPI(date: Date): string {
   const year = date.getFullYear();
