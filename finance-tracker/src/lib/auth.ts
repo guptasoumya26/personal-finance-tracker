@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { supabase } from './supabase';
+import { supabaseAdmin } from './supabase';
 
 export interface User {
   id: string;
@@ -23,7 +23,13 @@ export interface JWTPayload {
 }
 
 export class AuthService {
-  private static readonly JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key';
+  private static readonly JWT_SECRET = (() => {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      throw new Error('CRITICAL: JWT_SECRET environment variable is not set');
+    }
+    return secret;
+  })();
   private static readonly BCRYPT_ROUNDS = parseInt(process.env.BCRYPT_ROUNDS || '12');
   private static readonly MAX_USERS = parseInt(process.env.MAX_USERS || '5');
 
@@ -50,7 +56,7 @@ export class AuthService {
   }
 
   static async getUserByUsername(username: string): Promise<User | null> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('users')
       .select('*')
       .eq('username', username)
@@ -61,7 +67,7 @@ export class AuthService {
   }
 
   static async getUserByEmail(email: string): Promise<User | null> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('users')
       .select('*')
       .eq('email', email)
@@ -72,7 +78,7 @@ export class AuthService {
   }
 
   static async getUserById(id: string): Promise<User | null> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('users')
       .select('*')
       .eq('id', id)
@@ -90,7 +96,7 @@ export class AuthService {
   }): Promise<{ user: User | null; error: string | null }> {
     try {
       // Check if user limit is reached
-      const { count } = await supabase
+      const { count } = await supabaseAdmin
         .from('users')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'active');
@@ -114,7 +120,7 @@ export class AuthService {
       const passwordHash = await this.hashPassword(userData.password);
 
       // Create user
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('users')
         .insert({
           username: userData.username,
@@ -157,7 +163,7 @@ export class AuthService {
       }
 
       // Update last login
-      await supabase
+      await supabaseAdmin
         .from('users')
         .update({ last_login: new Date().toISOString() })
         .eq('id', user.id);
@@ -176,7 +182,7 @@ export class AuthService {
   }
 
   static async getAllUsers(): Promise<User[]> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('users')
       .select('*')
       .order('created_at', { ascending: false });
@@ -187,7 +193,7 @@ export class AuthService {
 
   static async deleteUser(userId: string): Promise<{ success: boolean; error: string | null }> {
     try {
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from('users')
         .delete()
         .eq('id', userId);
@@ -207,7 +213,7 @@ export class AuthService {
     error: string | null;
   }> {
     try {
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from('users')
         .update({ status })
         .eq('id', userId);

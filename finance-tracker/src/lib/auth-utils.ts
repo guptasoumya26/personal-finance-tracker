@@ -15,18 +15,18 @@ export interface AuthenticatedUser {
  */
 export async function getCurrentUser(request: NextRequest): Promise<AuthenticatedUser | null> {
   const authToken = request.cookies.get('auth-token');
-  console.log('getCurrentUser - authToken present:', !!authToken);
   if (!authToken) return null;
 
   try {
-    const jwtSecret = process.env.JWT_SECRET || 'fallback-secret-key';
-    console.log('getCurrentUser - JWT_SECRET present:', !!jwtSecret);
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      console.error('CRITICAL: JWT_SECRET environment variable is not set');
+      return null;
+    }
     const payload = jwt.verify(authToken.value, jwtSecret) as any;
-    console.log('getCurrentUser - JWT payload:', payload);
 
     if (payload && payload.userId) {
       const user = await AuthService.getUserById(payload.userId);
-      console.log('getCurrentUser - user from DB:', user ? { id: user.id, username: user.username } : null);
       if (user && user.status === 'active') {
         return {
           id: user.id,
@@ -37,9 +37,10 @@ export async function getCurrentUser(request: NextRequest): Promise<Authenticate
       }
     }
   } catch (error) {
-    console.log('getCurrentUser - JWT verification failed:', error);
-    // Legacy authentication removed - database reset invalidated old tokens
-    // Users need to login again with fresh JWT tokens
+    // JWT verification failed - token is invalid or expired
+    if (process.env.NODE_ENV === 'development') {
+      console.log('JWT verification failed:', error);
+    }
   }
 
   return null;

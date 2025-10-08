@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 import { requireAuth, createAuthErrorResponse } from '@/lib/auth-utils';
 
 export async function GET(request: NextRequest) {
   try {
     const user = await requireAuth(request);
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('central_investment_templates')
       .select('*')
       .eq('user_id', user.id)
@@ -31,16 +31,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('Attempting to create investment template...');
-
     const user = await requireAuth(request);
-    console.log('User authenticated:', { id: user.id, username: user.username });
-
     const body = await request.json();
     const { items } = body;
-    console.log('Request body items:', items);
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('central_investment_templates')
       .insert({
         user_id: user.id,
@@ -50,23 +45,18 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Supabase error:', error);
       throw error;
     }
 
-    console.log('Investment template created successfully:', data);
     return NextResponse.json({ data });
   } catch (error) {
     if (error instanceof Error && error.message === 'Authentication required') {
-      console.error('Authentication failed');
       return createAuthErrorResponse(error, 401);
     }
     console.error('Error creating central investment template:', error);
     return NextResponse.json(
       {
-        error: 'Failed to create central investment template',
-        details: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
+        error: 'Failed to create central investment template'
       },
       { status: 500 }
     );
@@ -80,7 +70,7 @@ export async function PUT(request: NextRequest) {
     const { items } = body;
 
     // First, check if a template exists for this user
-    const { data: existingTemplate } = await supabase
+    const { data: existingTemplate } = await supabaseAdmin
       .from('central_investment_templates')
       .select('id')
       .eq('user_id', user.id)
@@ -93,7 +83,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('central_investment_templates')
       .update({
         items: items || [],
@@ -116,8 +106,7 @@ export async function PUT(request: NextRequest) {
     console.error('Error updating central investment template:', error);
     return NextResponse.json(
       {
-        error: 'Failed to update central investment template',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        error: 'Failed to update central investment template'
       },
       { status: 500 }
     );

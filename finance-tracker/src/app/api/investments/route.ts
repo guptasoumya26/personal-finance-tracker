@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 import { requireAuth, createAuthErrorResponse } from '@/lib/auth-utils';
 
 export async function GET(request: NextRequest) {
@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const month = searchParams.get('month');
 
-    let query = supabase.from('investments').select('*').eq('user_id', user.id);
+    let query = supabaseAdmin.from('investments').select('*').eq('user_id', user.id);
 
     if (month) {
       query = query.eq('month', month);
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { name, amount, category, investment_type, month, source_type, monthly_template_instance_id } = body;
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('investments')
       .insert({
         user_id: user.id,
@@ -77,7 +77,7 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { id, name, amount, category, investment_type, month, source_type } = body;
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('investments')
       .update({ name, amount, category, investment_type: investment_type || 'Self', month, source_type })
       .eq('id', id)
@@ -115,7 +115,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('investments')
       .delete()
       .eq('id', id)

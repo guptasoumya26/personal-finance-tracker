@@ -8,23 +8,17 @@ async function getCurrentUser(request: NextRequest) {
   if (!authToken) return null;
 
   try {
-    const jwtSecret = process.env.JWT_SECRET || 'fallback-secret-key';
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      console.error('CRITICAL: JWT_SECRET environment variable is not set');
+      return null;
+    }
     const payload = jwt.verify(authToken.value, jwtSecret) as any;
     if (payload && payload.userId) {
       return await AuthService.getUserById(payload.userId);
     }
-  } catch {
-    // Try legacy token
-    try {
-      const tokenData = Buffer.from(authToken.value, 'base64').toString();
-      const [username] = tokenData.split(':');
-      const legacyUsername = process.env.AUTH_USERNAME;
-      if (username === legacyUsername) {
-        return { username, role: 'admin', legacy: true };
-      }
-    } catch {
-      // Ignore legacy token errors
-    }
+  } catch (error) {
+    console.error('JWT verification failed:', error);
   }
   return null;
 }

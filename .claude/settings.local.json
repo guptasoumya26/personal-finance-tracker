@@ -14,7 +14,9 @@
       "Bash(curl:*)",
       "Bash(git reset:*)",
       "Bash(openssl rand:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(git restore:*)",
+      "Bash(npm audit:*)"
     ],
     "deny": [],
     "ask": []

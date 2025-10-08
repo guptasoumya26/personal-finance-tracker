@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 import { requireAuth, createAuthErrorResponse } from '@/lib/auth-utils';
 
 export async function GET(request: NextRequest) {
@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const month = searchParams.get('month');
 
-    let query = supabase.from('credit_card_entries').select('*').eq('user_id', user.id);
+    let query = supabaseAdmin.from('credit_card_entries').select('*').eq('user_id', user.id);
 
     if (month) {
       query = query.eq('month', month);
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { description, amount, month } = body;
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('credit_card_entries')
       .insert({
         user_id: user.id,
@@ -80,7 +80,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('credit_card_entries')
       .delete()
       .eq('id', id)

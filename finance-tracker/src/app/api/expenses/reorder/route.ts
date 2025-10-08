@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 import { requireAuth, createAuthErrorResponse } from '@/lib/auth-utils';
 
 export async function POST(request: NextRequest) {
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 
     // Update display_order for each expense
     const updatePromises = expenses.map(({ id, display_order }) =>
-      supabase
+      supabaseAdmin
         .from('expenses')
         .update({ display_order })
         .eq('id', id)

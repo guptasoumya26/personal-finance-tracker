@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 import { requireAuth, createAuthErrorResponse } from '@/lib/auth-utils';
 
 export async function GET(request: NextRequest) {
   try {
     const user = await requireAuth(request);
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('central_templates')
       .select('*')
       .eq('user_id', user.id)
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     const { items } = body;
 
     // Check if template already exists for this user
-    const { data: existing } = await supabase
+    const { data: existing } = await supabaseAdmin
       .from('central_templates')
       .select('id')
       .eq('user_id', user.id)
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     let result;
     if (existing) {
       // Update existing template
-      result = await supabase
+      result = await supabaseAdmin
         .from('central_templates')
         .update({ items, updated_at: new Date().toISOString() })
         .eq('id', existing.id)
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
         .single();
     } else {
       // Create new template
-      result = await supabase
+      result = await supabaseAdmin
         .from('central_templates')
         .insert({ user_id: user.id, items })
         .select()
@@ -72,8 +72,7 @@ export async function POST(request: NextRequest) {
     console.error('Error saving central template:', error);
     return NextResponse.json(
       {
-        error: 'Failed to save central template',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        error: 'Failed to save central template'
       },
       { status: 500 }
     );
@@ -87,7 +86,7 @@ export async function PUT(request: NextRequest) {
     const { items } = body;
 
     // First, get the existing template for this user
-    const { data: existing, error: fetchError } = await supabase
+    const { data: existing, error: fetchError } = await supabaseAdmin
       .from('central_templates')
       .select('id')
       .eq('user_id', user.id)
@@ -105,7 +104,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update the template with the specific ID
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('central_templates')
       .update({ items, updated_at: new Date().toISOString() })
       .eq('id', existing.id)
@@ -125,8 +124,7 @@ export async function PUT(request: NextRequest) {
     console.error('Error updating central template:', error);
     return NextResponse.json(
       {
-        error: 'Failed to update central template',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        error: 'Failed to update central template'
       },
       { status: 500 }
     );

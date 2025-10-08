@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 import { requireAuth, createAuthErrorResponse } from '@/lib/auth-utils';
 
 export async function GET(request: NextRequest) {
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('notes')
       .select('*')
       .eq('month', month)
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     const { content, month, credit_card_tracker_title } = body;
 
     // Check if note already exists for this user and month
-    const { data: existing } = await supabase
+    const { data: existing } = await supabaseAdmin
       .from('notes')
       .select('id')
       .eq('month', month)
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
       if (credit_card_tracker_title !== undefined) {
         updateData.credit_card_tracker_title = credit_card_tracker_title;
       }
-      result = await supabase
+      result = await supabaseAdmin
         .from('notes')
         .update(updateData)
         .eq('id', existing.id)
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       if (credit_card_tracker_title !== undefined) {
         insertData.credit_card_tracker_title = credit_card_tracker_title;
       }
-      result = await supabase
+      result = await supabaseAdmin
         .from('notes')
         .insert(insertData)
         .select()
@@ -103,7 +103,7 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { content, month } = body;
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('notes')
       .update({ content, updated_at: new Date().toISOString() })
       .eq('month', month)

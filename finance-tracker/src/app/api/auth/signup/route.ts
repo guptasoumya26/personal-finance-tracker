@@ -20,9 +20,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (password.length < 6) {
+    // Strong password requirements: min 8 chars, uppercase, lowercase, and number
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if (!passwordRegex.test(password)) {
       return NextResponse.json(
-        { error: 'Password must be at least 6 characters long' },
+        {
+          error: 'Password must be at least 8 characters and include uppercase, lowercase, and number'
+        },
+        { status: 400 }
+      );
+    }
+
+    // Check for common weak passwords
+    const commonPasswords = ['password', '12345678', 'password123', 'admin123', 'qwerty123'];
+    if (commonPasswords.includes(password.toLowerCase())) {
+      return NextResponse.json(
+        { error: 'Password is too common. Please choose a stronger password' },
         { status: 400 }
       );
     }

@@ -39,33 +39,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Fallback to legacy environment variable authentication for backward compatibility
-    const legacyUsername = process.env.AUTH_USERNAME;
-    const legacyPassword = process.env.AUTH_PASSWORD;
-
-    if (legacyUsername && legacyPassword && username === legacyUsername && password === legacyPassword) {
-      // Create a simple session token for legacy auth
-      const sessionToken = Buffer.from(`${username}:${Date.now()}`).toString('base64');
-
-      const cookieStore = await cookies();
-      cookieStore.set('auth-token', sessionToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 24 * 60 * 60, // 24 hours
-        path: '/'
-      });
-
-      return NextResponse.json({
-        success: true,
-        user: {
-          username: legacyUsername,
-          role: 'admin',
-          legacy: true
-        }
-      });
-    }
-
     return NextResponse.json(
       { error: error || 'Invalid credentials' },
       { status: 401 }
