@@ -704,6 +704,8 @@ export default function FinanceTracker() {
       const updatedExpense = await api.toggleExpenseCompletion(id);
       const mappedExpense = {
         ...updatedExpense,
+        sourceType: updatedExpense.source_type,
+        displayOrder: updatedExpense.display_order ?? 0,
         isCompleted: updatedExpense.is_completed,
         month: new Date(updatedExpense.month + '-01'),
         createdAt: new Date(updatedExpense.created_at)
@@ -811,6 +813,8 @@ export default function FinanceTracker() {
       const updatedInvestment = await api.toggleInvestmentCompletion(id);
       const mappedInvestment = {
         ...updatedInvestment,
+        sourceType: updatedInvestment.source_type,
+        displayOrder: updatedInvestment.display_order ?? 0,
         isCompleted: updatedInvestment.is_completed,
         investmentType: updatedInvestment.investment_type || 'Self',
         month: new Date(updatedInvestment.month + '-01'),
@@ -1079,7 +1083,8 @@ export default function FinanceTracker() {
       opacity: isDragging ? 0.5 : (expense.isCompleted ? 0.6 : 1),
     };
 
-    const isManual = expense.sourceType === 'manual';
+    // Show Done button for manual expenses or expenses without sourceType (legacy items)
+    const isManual = expense.sourceType === 'manual' || !expense.sourceType;
 
     return (
       <div
@@ -1130,15 +1135,15 @@ export default function FinanceTracker() {
             {isManual && (
               <button
                 onClick={() => handleToggleExpenseCompletion(expense.id)}
-                className={`p-1 hover:bg-gray-600 rounded transition-colors ${
-                  expense.isCompleted ? 'text-green-400' : 'text-gray-400 hover:text-green-400'
+                className={`p-1.5 hover:bg-gray-600 rounded transition-colors ${
+                  expense.isCompleted ? 'text-green-500' : 'text-gray-400 hover:text-green-500'
                 }`}
-                title={expense.isCompleted ? 'Mark as not done' : 'Mark as done'}
+                title={expense.isCompleted ? 'Click to mark as not done' : 'Click to mark as done'}
               >
                 {expense.isCompleted ? (
-                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 fill-current" />
                 ) : (
-                  <Circle className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <Circle className="w-5 h-5 sm:w-6 sm:h-6" />
                 )}
               </button>
             )}
@@ -1177,7 +1182,8 @@ export default function FinanceTracker() {
       opacity: isDragging ? 0.5 : (investment.isCompleted ? 0.6 : 1),
     };
 
-    const isManual = investment.sourceType === 'manual';
+    // Show Done button for manual investments or investments without sourceType (legacy items)
+    const isManual = investment.sourceType === 'manual' || !investment.sourceType;
 
     return (
       <div
@@ -1235,15 +1241,15 @@ export default function FinanceTracker() {
             {isManual && (
               <button
                 onClick={() => handleToggleInvestmentCompletion(investment.id)}
-                className={`p-1 hover:bg-gray-600 rounded transition-colors ${
-                  investment.isCompleted ? 'text-green-400' : 'text-gray-400 hover:text-green-400'
+                className={`p-1.5 hover:bg-gray-600 rounded transition-colors ${
+                  investment.isCompleted ? 'text-green-500' : 'text-gray-400 hover:text-green-500'
                 }`}
-                title={investment.isCompleted ? 'Mark as not done' : 'Mark as done'}
+                title={investment.isCompleted ? 'Click to mark as not done' : 'Click to mark as done'}
               >
                 {investment.isCompleted ? (
-                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 fill-current" />
                 ) : (
-                  <Circle className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <Circle className="w-5 h-5 sm:w-6 sm:h-6" />
                 )}
               </button>
             )}
