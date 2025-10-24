@@ -230,7 +230,7 @@ export default function FinanceTracker() {
         const allExpensesData = await api.fetchExpenses();
         const mappedAllExpenses = allExpensesData.map((exp: any) => ({
           ...exp,
-          sourceType: exp.source_type,
+          sourceType: exp.source_type || 'manual', // Default to manual if not set
           isCompleted: exp.is_completed ?? false,
           month: new Date(exp.month + '-01'),
           createdAt: new Date(exp.created_at)
@@ -241,7 +241,7 @@ export default function FinanceTracker() {
         const mappedAllInvestments = allInvestmentsData.map((inv: any) => ({
           ...inv,
           investmentType: inv.investment_type || 'Self',
-          sourceType: inv.source_type,
+          sourceType: inv.source_type || 'manual', // Default to manual if not set
           isCompleted: inv.is_completed ?? false,
           month: new Date(inv.month + '-01'),
           createdAt: new Date(inv.created_at)
@@ -271,7 +271,7 @@ export default function FinanceTracker() {
         const expenses = await api.fetchExpenses(monthKey);
         const mappedExpenses = expenses.map((exp: any) => ({
           ...exp,
-          sourceType: exp.source_type,
+          sourceType: exp.source_type || 'manual', // Default to manual if not set
           displayOrder: exp.display_order ?? 0,
           isCompleted: exp.is_completed ?? false,
           month: new Date(exp.month + '-01'),
@@ -284,7 +284,7 @@ export default function FinanceTracker() {
         const mappedInvestments = investments.map((inv: any) => ({
           ...inv,
           investmentType: inv.investment_type || 'Self',
-          sourceType: inv.source_type,
+          sourceType: inv.source_type || 'manual', // Default to manual if not set
           displayOrder: inv.display_order ?? 0,
           isCompleted: inv.is_completed ?? false,
           month: new Date(inv.month + '-01'),
@@ -479,7 +479,7 @@ export default function FinanceTracker() {
         const createdExpense = await api.createExpense(expenseData);
         newExpenses.push({
           ...createdExpense,
-          sourceType: createdExpense.source_type,
+          sourceType: createdExpense.source_type || 'template',
           isCompleted: createdExpense.is_completed ?? false,
           month: new Date(createdExpense.month + '-01'),
           createdAt: new Date(createdExpense.created_at)
@@ -575,7 +575,7 @@ export default function FinanceTracker() {
         newInvestments.push({
           ...createdInvestment,
           investmentType: createdInvestment.investment_type || 'Self',
-          sourceType: createdInvestment.source_type,
+          sourceType: createdInvestment.source_type || 'template',
           isCompleted: createdInvestment.is_completed ?? false,
           month: new Date(createdInvestment.month + '-01'),
           createdAt: new Date(createdInvestment.created_at)
@@ -642,7 +642,7 @@ export default function FinanceTracker() {
       const createdExpense = await api.createExpense(expenseData);
       const newExpense = {
         ...createdExpense,
-        sourceType: createdExpense.source_type,
+        sourceType: createdExpense.source_type || 'manual',
         isCompleted: createdExpense.is_completed ?? false,
         month: new Date(createdExpense.month + '-01'),
         createdAt: new Date(createdExpense.created_at)
@@ -670,7 +670,7 @@ export default function FinanceTracker() {
       const updatedExpense = await api.updateExpense(expenseData);
       const mappedExpense = {
         ...updatedExpense,
-        sourceType: updatedExpense.source_type,
+        sourceType: updatedExpense.source_type || 'manual',
         isCompleted: updatedExpense.is_completed ?? false,
         month: new Date(updatedExpense.month + '-01'),
         createdAt: new Date(updatedExpense.created_at)
@@ -704,7 +704,7 @@ export default function FinanceTracker() {
       const updatedExpense = await api.toggleExpenseCompletion(id);
       const mappedExpense = {
         ...updatedExpense,
-        sourceType: updatedExpense.source_type,
+        sourceType: updatedExpense.source_type || 'manual',
         displayOrder: updatedExpense.display_order ?? 0,
         isCompleted: updatedExpense.is_completed,
         month: new Date(updatedExpense.month + '-01'),
@@ -749,7 +749,7 @@ export default function FinanceTracker() {
       const newInvestment = {
         ...createdInvestment,
         investmentType: createdInvestment.investment_type || 'Self',
-        sourceType: createdInvestment.source_type,
+        sourceType: createdInvestment.source_type || 'manual',
         isCompleted: createdInvestment.is_completed ?? false,
         month: new Date(createdInvestment.month + '-01'),
         createdAt: new Date(createdInvestment.created_at)
@@ -779,7 +779,7 @@ export default function FinanceTracker() {
       const mappedInvestment = {
         ...updatedInvestment,
         investmentType: updatedInvestment.investment_type || 'Self',
-        sourceType: updatedInvestment.source_type,
+        sourceType: updatedInvestment.source_type || 'manual',
         isCompleted: updatedInvestment.is_completed ?? false,
         month: new Date(updatedInvestment.month + '-01'),
         createdAt: new Date(updatedInvestment.created_at)
@@ -813,7 +813,7 @@ export default function FinanceTracker() {
       const updatedInvestment = await api.toggleInvestmentCompletion(id);
       const mappedInvestment = {
         ...updatedInvestment,
-        sourceType: updatedInvestment.source_type,
+        sourceType: updatedInvestment.source_type || 'manual',
         displayOrder: updatedInvestment.display_order ?? 0,
         isCompleted: updatedInvestment.is_completed,
         investmentType: updatedInvestment.investment_type || 'Self',
@@ -1083,8 +1083,8 @@ export default function FinanceTracker() {
       opacity: isDragging ? 0.5 : (expense.isCompleted ? 0.6 : 1),
     };
 
-    // Show Done button for manual expenses or expenses without sourceType (legacy items)
-    const isManual = expense.sourceType === 'manual' || !expense.sourceType;
+    // Show Done button for all non-template expenses
+    const isManual = expense.sourceType !== 'template';
 
     return (
       <div
@@ -1182,8 +1182,8 @@ export default function FinanceTracker() {
       opacity: isDragging ? 0.5 : (investment.isCompleted ? 0.6 : 1),
     };
 
-    // Show Done button for manual investments or investments without sourceType (legacy items)
-    const isManual = investment.sourceType === 'manual' || !investment.sourceType;
+    // Show Done button for all non-template investments
+    const isManual = investment.sourceType !== 'template';
 
     return (
       <div
