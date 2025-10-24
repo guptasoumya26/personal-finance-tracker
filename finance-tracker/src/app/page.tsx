@@ -230,6 +230,7 @@ export default function FinanceTracker() {
         const allExpensesData = await api.fetchExpenses();
         const mappedAllExpenses = allExpensesData.map((exp: any) => ({
           ...exp,
+          sourceType: exp.source_type,
           isCompleted: exp.is_completed ?? false,
           month: new Date(exp.month + '-01'),
           createdAt: new Date(exp.created_at)
@@ -240,6 +241,7 @@ export default function FinanceTracker() {
         const mappedAllInvestments = allInvestmentsData.map((inv: any) => ({
           ...inv,
           investmentType: inv.investment_type || 'Self',
+          sourceType: inv.source_type,
           isCompleted: inv.is_completed ?? false,
           month: new Date(inv.month + '-01'),
           createdAt: new Date(inv.created_at)
@@ -269,6 +271,7 @@ export default function FinanceTracker() {
         const expenses = await api.fetchExpenses(monthKey);
         const mappedExpenses = expenses.map((exp: any) => ({
           ...exp,
+          sourceType: exp.source_type,
           displayOrder: exp.display_order ?? 0,
           isCompleted: exp.is_completed ?? false,
           month: new Date(exp.month + '-01'),
@@ -281,6 +284,7 @@ export default function FinanceTracker() {
         const mappedInvestments = investments.map((inv: any) => ({
           ...inv,
           investmentType: inv.investment_type || 'Self',
+          sourceType: inv.source_type,
           displayOrder: inv.display_order ?? 0,
           isCompleted: inv.is_completed ?? false,
           month: new Date(inv.month + '-01'),
@@ -475,6 +479,8 @@ export default function FinanceTracker() {
         const createdExpense = await api.createExpense(expenseData);
         newExpenses.push({
           ...createdExpense,
+          sourceType: createdExpense.source_type,
+          isCompleted: createdExpense.is_completed ?? false,
           month: new Date(createdExpense.month + '-01'),
           createdAt: new Date(createdExpense.created_at)
         });
@@ -569,6 +575,8 @@ export default function FinanceTracker() {
         newInvestments.push({
           ...createdInvestment,
           investmentType: createdInvestment.investment_type || 'Self',
+          sourceType: createdInvestment.source_type,
+          isCompleted: createdInvestment.is_completed ?? false,
           month: new Date(createdInvestment.month + '-01'),
           createdAt: new Date(createdInvestment.created_at)
         });
@@ -634,6 +642,8 @@ export default function FinanceTracker() {
       const createdExpense = await api.createExpense(expenseData);
       const newExpense = {
         ...createdExpense,
+        sourceType: createdExpense.source_type,
+        isCompleted: createdExpense.is_completed ?? false,
         month: new Date(createdExpense.month + '-01'),
         createdAt: new Date(createdExpense.created_at)
       };
@@ -660,6 +670,8 @@ export default function FinanceTracker() {
       const updatedExpense = await api.updateExpense(expenseData);
       const mappedExpense = {
         ...updatedExpense,
+        sourceType: updatedExpense.source_type,
+        isCompleted: updatedExpense.is_completed ?? false,
         month: new Date(updatedExpense.month + '-01'),
         createdAt: new Date(updatedExpense.created_at)
       };
@@ -735,6 +747,8 @@ export default function FinanceTracker() {
       const newInvestment = {
         ...createdInvestment,
         investmentType: createdInvestment.investment_type || 'Self',
+        sourceType: createdInvestment.source_type,
+        isCompleted: createdInvestment.is_completed ?? false,
         month: new Date(createdInvestment.month + '-01'),
         createdAt: new Date(createdInvestment.created_at)
       };
@@ -763,6 +777,8 @@ export default function FinanceTracker() {
       const mappedInvestment = {
         ...updatedInvestment,
         investmentType: updatedInvestment.investment_type || 'Self',
+        sourceType: updatedInvestment.source_type,
+        isCompleted: updatedInvestment.is_completed ?? false,
         month: new Date(updatedInvestment.month + '-01'),
         createdAt: new Date(updatedInvestment.created_at)
       };
