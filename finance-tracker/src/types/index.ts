@@ -93,6 +93,7 @@ export interface Expense {
   sourceType: 'manual' | 'template';
   monthlyTemplateInstanceId?: string; // Link to template instance
   displayOrder?: number;
+  isCompleted?: boolean; // Track if expense is marked as done
   createdAt: Date;
 }
 
@@ -106,6 +107,7 @@ export interface Investment {
   sourceType: 'manual' | 'template';
   monthlyTemplateInstanceId?: string;
   displayOrder?: number;
+  isCompleted?: boolean; // Track if investment is marked as done
   createdAt: Date;
 }
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Edit2, Trash2, Calendar, Settings, Menu, X, LogOut, GripVertical } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Edit2, Trash2, Calendar, Settings, Menu, X, LogOut, GripVertical, CheckCircle, Circle } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -230,6 +230,7 @@ export default function FinanceTracker() {
         const allExpensesData = await api.fetchExpenses();
         const mappedAllExpenses = allExpensesData.map((exp: any) => ({
           ...exp,
+          isCompleted: exp.is_completed ?? false,
           month: new Date(exp.month + '-01'),
           createdAt: new Date(exp.created_at)
         }));
@@ -239,6 +240,7 @@ export default function FinanceTracker() {
         const mappedAllInvestments = allInvestmentsData.map((inv: any) => ({
           ...inv,
           investmentType: inv.investment_type || 'Self',
+          isCompleted: inv.is_completed ?? false,
           month: new Date(inv.month + '-01'),
           createdAt: new Date(inv.created_at)
         }));
@@ -268,6 +270,7 @@ export default function FinanceTracker() {
         const mappedExpenses = expenses.map((exp: any) => ({
           ...exp,
           displayOrder: exp.display_order ?? 0,
+          isCompleted: exp.is_completed ?? false,
           month: new Date(exp.month + '-01'),
           createdAt: new Date(exp.created_at)
         }));
@@ -279,6 +282,7 @@ export default function FinanceTracker() {
           ...inv,
           investmentType: inv.investment_type || 'Self',
           displayOrder: inv.display_order ?? 0,
+          isCompleted: inv.is_completed ?? false,
           month: new Date(inv.month + '-01'),
           createdAt: new Date(inv.created_at)
         }));
@@ -683,6 +687,28 @@ export default function FinanceTracker() {
     }
   };
 
+  const handleToggleExpenseCompletion = async (id: string) => {
+    try {
+      const updatedExpense = await api.toggleExpenseCompletion(id);
+      const mappedExpense = {
+        ...updatedExpense,
+        isCompleted: updatedExpense.is_completed,
+        month: new Date(updatedExpense.month + '-01'),
+        createdAt: new Date(updatedExpense.created_at)
+      };
+
+      setMonthlyExpenses(prev =>
+        prev.map(exp => exp.id === id ? mappedExpense : exp)
+      );
+      setAllExpenses(prev =>
+        prev.map(exp => exp.id === id ? mappedExpense : exp)
+      );
+    } catch (error) {
+      console.error('Error toggling expense completion:', error);
+      alert('Failed to update expense status. Please try again.');
+    }
+  };
+
   const openEditExpenseForm = (expense: Expense) => {
     setEditingExpense(expense);
     setShowExpenseForm(true);
@@ -761,6 +787,29 @@ export default function FinanceTracker() {
     } catch (error) {
       console.error('Error deleting investment:', error);
       alert('Failed to delete investment. Please try again.');
+    }
+  };
+
+  const handleToggleInvestmentCompletion = async (id: string) => {
+    try {
+      const updatedInvestment = await api.toggleInvestmentCompletion(id);
+      const mappedInvestment = {
+        ...updatedInvestment,
+        isCompleted: updatedInvestment.is_completed,
+        investmentType: updatedInvestment.investment_type || 'Self',
+        month: new Date(updatedInvestment.month + '-01'),
+        createdAt: new Date(updatedInvestment.created_at)
+      };
+
+      setMonthlyInvestments(prev =>
+        prev.map(inv => inv.id === id ? mappedInvestment : inv)
+      );
+      setAllInvestments(prev =>
+        prev.map(inv => inv.id === id ? mappedInvestment : inv)
+      );
+    } catch (error) {
+      console.error('Error toggling investment completion:', error);
+      alert('Failed to update investment status. Please try again.');
     }
   };
 
@@ -921,6 +970,10 @@ export default function FinanceTracker() {
     )
     .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0) || a.name.localeCompare(b.name));
   const totalExpenses = currentMonthExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+  const completedExpenses = currentMonthExpenses
+    .filter(exp => exp.isCompleted)
+    .reduce((sum, exp) => sum + exp.amount, 0);
+  const remainingExpenses = totalExpenses - completedExpenses;
 
   const currentMonthInvestments = monthlyInvestments
     .filter(inv =>
@@ -929,6 +982,10 @@ export default function FinanceTracker() {
     )
     .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0) || a.name.localeCompare(b.name));
   const totalInvestments = currentMonthInvestments.reduce((sum, inv) => sum + inv.amount, 0);
+  const completedInvestments = currentMonthInvestments
+    .filter(inv => inv.isCompleted)
+    .reduce((sum, inv) => sum + inv.amount, 0);
+  const remainingInvestments = totalInvestments - completedInvestments;
 
   // Calculate chart data from database
   const calculateChartData = () => {
@@ -1003,14 +1060,18 @@ export default function FinanceTracker() {
     const style = {
       transform: CSS.Transform.toString(transform),
       transition,
-      opacity: isDragging ? 0.5 : 1,
+      opacity: isDragging ? 0.5 : (expense.isCompleted ? 0.6 : 1),
     };
+
+    const isManual = expense.sourceType === 'manual';
 
     return (
       <div
         ref={setNodeRef}
         style={style}
-        className="flex items-center justify-between p-2 sm:p-3 bg-gray-700 rounded-lg"
+        className={`flex items-center justify-between p-2 sm:p-3 bg-gray-700 rounded-lg ${
+          expense.isCompleted ? 'border border-green-500/30' : ''
+        }`}
       >
         <button
           className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-600 rounded text-gray-400 hover:text-white transition-colors mr-2"
@@ -1021,18 +1082,50 @@ export default function FinanceTracker() {
         </button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="font-medium text-sm sm:text-base truncate">{expense.name}</p>
+            <p className={`font-medium text-sm sm:text-base truncate ${
+              expense.isCompleted ? 'line-through text-gray-400' : ''
+            }`}>
+              {expense.name}
+            </p>
             {expense.sourceType === 'template' && (
               <span className="text-xs bg-blue-600 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded whitespace-nowrap">
                 Template
               </span>
             )}
+            {expense.isCompleted && (
+              <span className="text-xs bg-green-600 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded whitespace-nowrap">
+                Done
+              </span>
+            )}
           </div>
-          <p className="text-gray-400 text-xs sm:text-sm truncate">{expense.category}</p>
+          <p className={`text-xs sm:text-sm truncate ${
+            expense.isCompleted ? 'text-gray-500 line-through' : 'text-gray-400'
+          }`}>
+            {expense.category}
+          </p>
         </div>
         <div className="flex items-center gap-2 sm:gap-3 ml-2">
-          <p className="text-green-400 font-semibold text-sm sm:text-base">{formatINR(expense.amount)}</p>
+          <p className={`font-semibold text-sm sm:text-base ${
+            expense.isCompleted ? 'text-gray-500 line-through' : 'text-green-400'
+          }`}>
+            {formatINR(expense.amount)}
+          </p>
           <div className="flex gap-1">
+            {isManual && (
+              <button
+                onClick={() => handleToggleExpenseCompletion(expense.id)}
+                className={`p-1 hover:bg-gray-600 rounded transition-colors ${
+                  expense.isCompleted ? 'text-green-400' : 'text-gray-400 hover:text-green-400'
+                }`}
+                title={expense.isCompleted ? 'Mark as not done' : 'Mark as done'}
+              >
+                {expense.isCompleted ? (
+                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+                ) : (
+                  <Circle className="w-4 h-4 sm:w-5 sm:h-5" />
+                )}
+              </button>
+            )}
             <button
               onClick={() => openEditExpenseForm(expense)}
               className="p-1 hover:bg-gray-600 rounded text-gray-400 hover:text-white transition-colors"
@@ -1065,14 +1158,18 @@ export default function FinanceTracker() {
     const style = {
       transform: CSS.Transform.toString(transform),
       transition,
-      opacity: isDragging ? 0.5 : 1,
+      opacity: isDragging ? 0.5 : (investment.isCompleted ? 0.6 : 1),
     };
+
+    const isManual = investment.sourceType === 'manual';
 
     return (
       <div
         ref={setNodeRef}
         style={style}
-        className="flex items-center justify-between p-2 sm:p-3 bg-gray-700 rounded-lg"
+        className={`flex items-center justify-between p-2 sm:p-3 bg-gray-700 rounded-lg ${
+          investment.isCompleted ? 'border border-green-500/30' : ''
+        }`}
       >
         <button
           className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-600 rounded text-gray-400 hover:text-white transition-colors mr-2"
@@ -1083,7 +1180,11 @@ export default function FinanceTracker() {
         </button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="font-medium text-sm sm:text-base truncate">{investment.name}</p>
+            <p className={`font-medium text-sm sm:text-base truncate ${
+              investment.isCompleted ? 'line-through text-gray-400' : ''
+            }`}>
+              {investment.name}
+            </p>
             {investment.sourceType === 'template' && (
               <span className="text-xs bg-blue-600 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded whitespace-nowrap">
                 Template
@@ -1096,12 +1197,40 @@ export default function FinanceTracker() {
             }`}>
               {investment.investmentType || 'Self'}
             </span>
+            {investment.isCompleted && (
+              <span className="text-xs bg-green-600 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded whitespace-nowrap">
+                Done
+              </span>
+            )}
           </div>
-          <p className="text-gray-400 text-xs sm:text-sm truncate">{investment.category}</p>
+          <p className={`text-xs sm:text-sm truncate ${
+            investment.isCompleted ? 'text-gray-500 line-through' : 'text-gray-400'
+          }`}>
+            {investment.category}
+          </p>
         </div>
         <div className="flex items-center gap-2 sm:gap-3 ml-2">
-          <p className="text-blue-400 font-semibold text-sm sm:text-base">{formatINR(investment.amount)}</p>
+          <p className={`font-semibold text-sm sm:text-base ${
+            investment.isCompleted ? 'text-gray-500 line-through' : 'text-blue-400'
+          }`}>
+            {formatINR(investment.amount)}
+          </p>
           <div className="flex gap-1">
+            {isManual && (
+              <button
+                onClick={() => handleToggleInvestmentCompletion(investment.id)}
+                className={`p-1 hover:bg-gray-600 rounded transition-colors ${
+                  investment.isCompleted ? 'text-green-400' : 'text-gray-400 hover:text-green-400'
+                }`}
+                title={investment.isCompleted ? 'Mark as not done' : 'Mark as done'}
+              >
+                {investment.isCompleted ? (
+                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+                ) : (
+                  <Circle className="w-4 h-4 sm:w-5 sm:h-5" />
+                )}
+              </button>
+            )}
             <button
               onClick={() => openEditInvestmentForm(investment)}
               className="p-1 hover:bg-gray-600 rounded text-gray-400 hover:text-white transition-colors"
@@ -1389,9 +1518,17 @@ export default function FinanceTracker() {
 
               {/* Expenses Summary */}
               <div className="bg-gray-700 rounded-lg p-3 sm:p-4 mb-4">
-                <p className="text-gray-400 text-xs sm:text-sm">{formatMonth(currentMonth)} Total</p>
-                <p className="text-green-400 text-xl sm:text-2xl font-semibold">{formatINR(totalExpenses)}</p>
-                <p className="text-gray-400 text-xs">Total expenses this month</p>
+                <p className="text-gray-400 text-xs sm:text-sm mb-3">{formatMonth(currentMonth)}</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-gray-400 text-xs mb-1">Total</p>
+                    <p className="text-green-400 text-lg sm:text-xl font-semibold">{formatINR(totalExpenses)}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-400 text-xs mb-1">Remaining</p>
+                    <p className="text-yellow-400 text-lg sm:text-xl font-semibold">{formatINR(remainingExpenses)}</p>
+                  </div>
+                </div>
               </div>
 
               <button
@@ -1472,9 +1609,17 @@ export default function FinanceTracker() {
 
               {/* Investments Summary */}
               <div className="bg-gray-700 rounded-lg p-3 sm:p-4 mb-4">
-                <p className="text-gray-400 text-xs sm:text-sm">{formatMonth(currentMonth)} Investments</p>
-                <p className="text-blue-400 text-xl sm:text-2xl font-semibold">{formatINR(totalInvestments)}</p>
-                <p className="text-gray-400 text-xs">Total investments this month</p>
+                <p className="text-gray-400 text-xs sm:text-sm mb-3">{formatMonth(currentMonth)}</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-gray-400 text-xs mb-1">Total</p>
+                    <p className="text-blue-400 text-lg sm:text-xl font-semibold">{formatINR(totalInvestments)}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-400 text-xs mb-1">Remaining</p>
+                    <p className="text-yellow-400 text-lg sm:text-xl font-semibold">{formatINR(remainingInvestments)}</p>
+                  </div>
+                </div>
               </div>
 
               <button

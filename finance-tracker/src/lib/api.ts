@@ -90,6 +90,21 @@ export async function deleteExpense(id: string) {
   return true;
 }
 
+export async function toggleExpenseCompletion(id: string) {
+  const response = await fetch('/api/expenses/toggle-completion', {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ id }),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to toggle expense completion');
+  }
+  const result = await response.json();
+  return result.data;
+}
+
 // Investments API
 export async function fetchInvestments(month?: string) {
   const url = month ? `/api/investments?month=${month}` : '/api/investments';
@@ -179,6 +194,21 @@ export async function deleteInvestment(id: string) {
     throw new Error('Failed to delete investment');
   }
   return true;
+}
+
+export async function toggleInvestmentCompletion(id: string) {
+  const response = await fetch('/api/investments/toggle-completion', {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ id }),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to toggle investment completion');
+  }
+  const result = await response.json();
+  return result.data;
 }
 
 // Notes API
