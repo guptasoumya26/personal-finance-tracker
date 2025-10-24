@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Edit2, Trash2, Calendar, Settings, Menu, X, LogOut, GripVertical, CheckCircle, Circle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Edit2, Trash2, Calendar, Settings, Menu, X, LogOut, GripVertical } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -1131,16 +1131,13 @@ export default function FinanceTracker() {
           <div className="flex gap-1">
             <button
               onClick={() => handleToggleExpenseCompletion(expense.id)}
-              className={`p-1.5 hover:bg-gray-600 rounded transition-colors ${
-                expense.isCompleted ? 'text-green-500' : 'text-gray-400 hover:text-green-500'
+              className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded text-xs sm:text-sm font-medium transition-colors ${
+                expense.isCompleted
+                  ? 'bg-green-600 hover:bg-green-700 text-white'
+                  : 'bg-gray-600 hover:bg-gray-500 text-white'
               }`}
-              title={expense.isCompleted ? 'Click to mark as not done' : 'Click to mark as done'}
             >
-              {expense.isCompleted ? (
-                <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 fill-current" />
-              ) : (
-                <Circle className="w-5 h-5 sm:w-6 sm:h-6" />
-              )}
+              {expense.isCompleted ? 'Undo' : 'Done'}
             </button>
             <button
               onClick={() => openEditExpenseForm(expense)}
@@ -1232,16 +1229,13 @@ export default function FinanceTracker() {
           <div className="flex gap-1">
             <button
               onClick={() => handleToggleInvestmentCompletion(investment.id)}
-              className={`p-1.5 hover:bg-gray-600 rounded transition-colors ${
-                investment.isCompleted ? 'text-green-500' : 'text-gray-400 hover:text-green-500'
+              className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded text-xs sm:text-sm font-medium transition-colors ${
+                investment.isCompleted
+                  ? 'bg-green-600 hover:bg-green-700 text-white'
+                  : 'bg-gray-600 hover:bg-gray-500 text-white'
               }`}
-              title={investment.isCompleted ? 'Click to mark as not done' : 'Click to mark as done'}
             >
-              {investment.isCompleted ? (
-                <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 fill-current" />
-              ) : (
-                <Circle className="w-5 h-5 sm:w-6 sm:h-6" />
-              )}
+              {investment.isCompleted ? 'Undo' : 'Done'}
             </button>
             <button
               onClick={() => openEditInvestmentForm(investment)}

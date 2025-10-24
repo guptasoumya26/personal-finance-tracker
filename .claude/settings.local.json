@@ -16,7 +16,10 @@
       "Bash(openssl rand:*)",
       "Bash(node:*)",
       "Bash(git restore:*)",
-      "Bash(npm audit:*)"
+      "Bash(npm audit:*)",
+      "Bash(tree:*)",
+      "Bash(dir:*)",
+      "Bash(findstr:*)"
     ],
     "deny": [],
     "ask": []
