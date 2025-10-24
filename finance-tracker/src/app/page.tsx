@@ -1083,9 +1083,6 @@ export default function FinanceTracker() {
       opacity: isDragging ? 0.5 : (expense.isCompleted ? 0.6 : 1),
     };
 
-    // Show Done button for all non-template expenses
-    const isManual = expense.sourceType !== 'template';
-
     return (
       <div
         ref={setNodeRef}
@@ -1132,21 +1129,19 @@ export default function FinanceTracker() {
             {formatINR(expense.amount)}
           </p>
           <div className="flex gap-1">
-            {isManual && (
-              <button
-                onClick={() => handleToggleExpenseCompletion(expense.id)}
-                className={`p-1.5 hover:bg-gray-600 rounded transition-colors ${
-                  expense.isCompleted ? 'text-green-500' : 'text-gray-400 hover:text-green-500'
-                }`}
-                title={expense.isCompleted ? 'Click to mark as not done' : 'Click to mark as done'}
-              >
-                {expense.isCompleted ? (
-                  <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 fill-current" />
-                ) : (
-                  <Circle className="w-5 h-5 sm:w-6 sm:h-6" />
-                )}
-              </button>
-            )}
+            <button
+              onClick={() => handleToggleExpenseCompletion(expense.id)}
+              className={`p-1.5 hover:bg-gray-600 rounded transition-colors ${
+                expense.isCompleted ? 'text-green-500' : 'text-gray-400 hover:text-green-500'
+              }`}
+              title={expense.isCompleted ? 'Click to mark as not done' : 'Click to mark as done'}
+            >
+              {expense.isCompleted ? (
+                <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 fill-current" />
+              ) : (
+                <Circle className="w-5 h-5 sm:w-6 sm:h-6" />
+              )}
+            </button>
             <button
               onClick={() => openEditExpenseForm(expense)}
               className="p-1 hover:bg-gray-600 rounded text-gray-400 hover:text-white transition-colors"
@@ -1181,9 +1176,6 @@ export default function FinanceTracker() {
       transition,
       opacity: isDragging ? 0.5 : (investment.isCompleted ? 0.6 : 1),
     };
-
-    // Show Done button for all non-template investments
-    const isManual = investment.sourceType !== 'template';
 
     return (
       <div
@@ -1238,21 +1230,19 @@ export default function FinanceTracker() {
             {formatINR(investment.amount)}
           </p>
           <div className="flex gap-1">
-            {isManual && (
-              <button
-                onClick={() => handleToggleInvestmentCompletion(investment.id)}
-                className={`p-1.5 hover:bg-gray-600 rounded transition-colors ${
-                  investment.isCompleted ? 'text-green-500' : 'text-gray-400 hover:text-green-500'
-                }`}
-                title={investment.isCompleted ? 'Click to mark as not done' : 'Click to mark as done'}
-              >
-                {investment.isCompleted ? (
-                  <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 fill-current" />
-                ) : (
-                  <Circle className="w-5 h-5 sm:w-6 sm:h-6" />
-                )}
-              </button>
-            )}
+            <button
+              onClick={() => handleToggleInvestmentCompletion(investment.id)}
+              className={`p-1.5 hover:bg-gray-600 rounded transition-colors ${
+                investment.isCompleted ? 'text-green-500' : 'text-gray-400 hover:text-green-500'
+              }`}
+              title={investment.isCompleted ? 'Click to mark as not done' : 'Click to mark as done'}
+            >
+              {investment.isCompleted ? (
+                <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 fill-current" />
+              ) : (
+                <Circle className="w-5 h-5 sm:w-6 sm:h-6" />
+              )}
+            </button>
             <button
               onClick={() => openEditInvestmentForm(investment)}
               className="p-1 hover:bg-gray-600 rounded text-gray-400 hover:text-white transition-colors"
