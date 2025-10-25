@@ -41,7 +41,8 @@ export default function FinanceTracker() {
   const [editingInvestment, setEditingInvestment] = useState<Investment | null>(null);
   const [currentNote, setCurrentNote] = useState<string>('');
   const [creditCardTitle, setCreditCardTitle] = useState<string>('Credit Card Bill Tracker');
-  const notesTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [hasUnsavedNotes, setHasUnsavedNotes] = useState(false);
+  const [savingNotes, setSavingNotes] = useState(false);
   const [creditCardEntries, setCreditCardEntries] = useState<CreditCardEntry[]>([]);
   const [loadingCreditCard, setLoadingCreditCard] = useState(false);
   const [incomes, setIncomes] = useState<Income[]>([]);
@@ -248,6 +249,11 @@ export default function FinanceTracker() {
         }));
         setAllInvestments(mappedAllInvestments);
 
+        // Load global note (persists across all months)
+        const note = await api.fetchNote();
+        setCurrentNote(note?.content || '');
+        setCreditCardTitle(note?.credit_card_tracker_title || 'Credit Card Bill Tracker');
+
       } catch (error) {
         console.error('Error loading initial data:', error);
       } finally {
@@ -291,11 +297,6 @@ export default function FinanceTracker() {
           createdAt: new Date(inv.created_at)
         }));
         setMonthlyInvestments(mappedInvestments);
-
-        // Load note for current month
-        const note = await api.fetchNote(monthKey);
-        setCurrentNote(note?.content || '');
-        setCreditCardTitle(note?.credit_card_tracker_title || 'Credit Card Bill Tracker');
 
         // Load credit card entries for current month
         setLoadingCreditCard(true);
@@ -345,25 +346,22 @@ export default function FinanceTracker() {
   }, [currentMonth]);
 
 
-  const handleNotesChange = async (value: string) => {
+  const handleNotesChange = (value: string) => {
+    setCurrentNote(value);
+    setHasUnsavedNotes(true);
+  };
+
+  const handleSaveNotes = async () => {
     try {
-      const monthKey = api.formatMonthForAPI(currentMonth);
-      setCurrentNote(value);
-
-      // Debounce the API call
-      if (notesTimeoutRef.current) {
-        clearTimeout(notesTimeoutRef.current);
-      }
-
-      notesTimeoutRef.current = setTimeout(async () => {
-        try {
-          await api.saveNote(value, monthKey);
-        } catch (error) {
-          console.error('Error saving note:', error);
-        }
-      }, 500);
+      setSavingNotes(true);
+      await api.saveNote(currentNote);
+      setHasUnsavedNotes(false);
+      showToast('Notes saved successfully!', 'success');
     } catch (error) {
-      console.error('Error handling note change:', error);
+      console.error('Error saving notes:', error);
+      showToast('Failed to save notes. Please try again.', 'warning');
+    } finally {
+      setSavingNotes(false);
     }
   };
 
@@ -967,8 +965,7 @@ export default function FinanceTracker() {
   // Credit Card Title handler
   const handleCreditCardTitleChange = async (newTitle: string) => {
     try {
-      const monthKey = api.formatMonthForAPI(currentMonth);
-      await api.saveNote(currentNote, monthKey, newTitle);
+      await api.saveNote(currentNote, newTitle);
       setCreditCardTitle(newTitle);
       showToast('Title saved successfully', 'success');
     } catch (error) {
@@ -1697,16 +1694,33 @@ export default function FinanceTracker() {
         {/* Notes Section */}
         <div className="mt-6 sm:mt-8">
           <div className="bg-gray-800 rounded-lg p-4 sm:p-6">
-            <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center gap-2">
-              📝 Notes - {formatMonth(currentMonth)}
-            </h2>
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h2 className="text-base sm:text-lg font-semibold flex items-center gap-2">
+                📝 Notes
+                <span className="text-xs text-gray-400 font-normal">(Persists across all months)</span>
+              </h2>
+              <button
+                onClick={handleSaveNotes}
+                disabled={!hasUnsavedNotes || savingNotes}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors text-sm ${
+                  hasUnsavedNotes
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                    : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                {savingNotes ? 'Saving...' : hasUnsavedNotes ? 'Save Notes' : 'Saved'}
+              </button>
+            </div>
             <textarea
               className="w-full bg-gray-700 rounded-lg p-3 sm:p-4 text-sm sm:text-base text-white placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-              rows={4}
-              placeholder="Add any miscellaneous notes for this month..."
+              rows={6}
+              placeholder="Add any notes here... These notes will be available across all months."
               value={currentNote}
               onChange={(e) => handleNotesChange(e.target.value)}
             />
+            {hasUnsavedNotes && !savingNotes && (
+              <p className="text-xs text-yellow-400 mt-2">⚠️ You have unsaved changes</p>
+            )}
           </div>
         </div>
             </div>

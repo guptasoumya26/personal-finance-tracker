@@ -5,20 +5,11 @@ import { requireAuth, createAuthErrorResponse } from '@/lib/auth-utils';
 export async function GET(request: NextRequest) {
   try {
     const user = await requireAuth(request);
-    const { searchParams } = new URL(request.url);
-    const month = searchParams.get('month');
 
-    if (!month) {
-      return NextResponse.json(
-        { error: 'Month parameter is required' },
-        { status: 400 }
-      );
-    }
-
+    // Fetch global note for this user (no month parameter needed)
     const { data, error } = await supabaseAdmin
       .from('notes')
       .select('*')
-      .eq('month', month)
       .eq('user_id', user.id)
       .single();
 
@@ -43,13 +34,12 @@ export async function POST(request: NextRequest) {
   try {
     const user = await requireAuth(request);
     const body = await request.json();
-    const { content, month, credit_card_tracker_title } = body;
+    const { content, credit_card_tracker_title } = body;
 
-    // Check if note already exists for this user and month
+    // Check if note already exists for this user (global note, no month)
     const { data: existing } = await supabaseAdmin
       .from('notes')
       .select('id')
-      .eq('month', month)
       .eq('user_id', user.id)
       .single();
 
@@ -69,7 +59,7 @@ export async function POST(request: NextRequest) {
         .single();
     } else {
       // Create new note
-      const insertData: any = { user_id: user.id, content, month };
+      const insertData: any = { user_id: user.id, content };
       if (credit_card_tracker_title !== undefined) {
         insertData.credit_card_tracker_title = credit_card_tracker_title;
       }
@@ -101,12 +91,11 @@ export async function PUT(request: NextRequest) {
   try {
     const user = await requireAuth(request);
     const body = await request.json();
-    const { content, month } = body;
+    const { content } = body;
 
     const { data, error } = await supabaseAdmin
       .from('notes')
       .update({ content, updated_at: new Date().toISOString() })
-      .eq('month', month)
       .eq('user_id', user.id) // Ensure user can only update their own notes
       .select()
       .single();

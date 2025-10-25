@@ -114,7 +114,6 @@ export interface Investment {
 export interface Note {
   id: string;
   content: string;
-  month: Date;
   createdAt: Date;
   updatedAt: Date;
 }

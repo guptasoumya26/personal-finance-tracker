@@ -211,9 +211,9 @@ export async function toggleInvestmentCompletion(id: string) {
   return result.data;
 }
 
-// Notes API
-export async function fetchNote(month: string) {
-  const response = await fetch(`/api/notes?month=${month}`);
+// Notes API - Global notes (not per-month)
+export async function fetchNote() {
+  const response = await fetch('/api/notes');
   if (!response.ok) {
     throw new Error('Failed to fetch note');
   }
@@ -221,8 +221,8 @@ export async function fetchNote(month: string) {
   return result.data;
 }
 
-export async function saveNote(content: string, month: string, credit_card_tracker_title?: string) {
-  const body: any = { content, month };
+export async function saveNote(content: string, credit_card_tracker_title?: string) {
+  const body: any = { content };
   if (credit_card_tracker_title !== undefined) {
     body.credit_card_tracker_title = credit_card_tracker_title;
   }
