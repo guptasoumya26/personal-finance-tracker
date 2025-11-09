@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
       query = query.eq('month', month);
     }
 
-    const { data, error } = await query.order('created_at', { ascending: false });
+    const { data, error } = await query.order('display_order', { ascending: true, nullsFirst: false }).order('created_at', { ascending: false });
 
     if (error) {
       throw error;
@@ -62,6 +62,47 @@ export async function POST(request: NextRequest) {
     console.error('Error creating credit card entry:', error);
     return NextResponse.json(
       { error: 'Failed to create credit card entry' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    const user = await requireAuth(request);
+    const body = await request.json();
+    const { id, description, amount } = body;
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Entry ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('credit_card_entries')
+      .update({
+        description,
+        amount
+      })
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return NextResponse.json({ data });
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Authentication required') {
+      return createAuthErrorResponse(error, 401);
+    }
+    console.error('Error updating credit card entry:', error);
+    return NextResponse.json(
+      { error: 'Failed to update credit card entry' },
       { status: 500 }
     );
   }

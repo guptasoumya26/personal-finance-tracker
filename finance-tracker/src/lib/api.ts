@@ -266,12 +266,41 @@ export async function createCreditCardEntry(entry: any) {
   return result.data;
 }
 
+export async function updateCreditCardEntry(id: string, entry: any) {
+  const response = await fetch('/api/credit-card-entries', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ id, ...entry }),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to update credit card entry');
+  }
+  const result = await response.json();
+  return result.data;
+}
+
 export async function deleteCreditCardEntry(id: string) {
   const response = await fetch(`/api/credit-card-entries?id=${id}`, {
     method: 'DELETE',
   });
   if (!response.ok) {
     throw new Error('Failed to delete credit card entry');
+  }
+  return true;
+}
+
+export async function reorderCreditCardEntries(entries: any[]) {
+  const response = await fetch('/api/credit-card-entries/reorder', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ entries }),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to reorder credit card entries');
   }
   return true;
 }

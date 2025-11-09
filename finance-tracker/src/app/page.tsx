@@ -864,6 +864,30 @@ export default function FinanceTracker() {
     }
   };
 
+  const handleUpdateCreditCardEntry = async (id: string, entry: { description: string; amount: number }) => {
+    try {
+      setLoadingCreditCard(true);
+      const updatedEntry = await api.updateCreditCardEntry(id, {
+        description: entry.description,
+        amount: entry.amount
+      });
+
+      const mappedEntry = {
+        ...updatedEntry,
+        month: new Date(updatedEntry.month + '-01'),
+        createdAt: new Date(updatedEntry.created_at)
+      };
+
+      setCreditCardEntries(prev => prev.map(e => e.id === id ? mappedEntry : e));
+      showToast('Credit card entry updated successfully', 'success');
+    } catch (error) {
+      console.error('Error updating credit card entry:', error);
+      alert('Failed to update credit card entry. Please try again.');
+    } finally {
+      setLoadingCreditCard(false);
+    }
+  };
+
   const handleDeleteCreditCardEntry = async (id: string) => {
     try {
       setLoadingCreditCard(true);
@@ -875,6 +899,32 @@ export default function FinanceTracker() {
       alert('Failed to delete credit card entry. Please try again.');
     } finally {
       setLoadingCreditCard(false);
+    }
+  };
+
+  const handleReorderCreditCardEntries = async (reorderedEntries: CreditCardEntry[]) => {
+    // Optimistically update UI
+    setCreditCardEntries(reorderedEntries);
+
+    try {
+      const entriesWithOrder = reorderedEntries.map((entry, index) => ({
+        id: entry.id,
+        display_order: index
+      }));
+
+      await api.reorderCreditCardEntries(entriesWithOrder);
+    } catch (error) {
+      console.error('Error reordering credit card entries:', error);
+      // Revert to original order on error
+      const monthKey = api.formatMonthForAPI(currentMonth);
+      const entries = await api.fetchCreditCardEntries(monthKey);
+      const mappedEntries = entries.map((entry: any) => ({
+        ...entry,
+        month: new Date(entry.month + '-01'),
+        createdAt: new Date(entry.created_at)
+      }));
+      setCreditCardEntries(mappedEntries);
+      alert('Failed to reorder credit card entries. Please try again.');
     }
   };
 
@@ -1588,7 +1638,9 @@ export default function FinanceTracker() {
                 <CreditCardTracker
                   entries={creditCardEntries}
                   onAddEntry={handleAddCreditCardEntry}
+                  onUpdateEntry={handleUpdateCreditCardEntry}
                   onDeleteEntry={handleDeleteCreditCardEntry}
+                  onReorderEntries={handleReorderCreditCardEntries}
                   loading={loadingCreditCard}
                   title={creditCardTitle}
                   onTitleChange={handleCreditCardTitleChange}

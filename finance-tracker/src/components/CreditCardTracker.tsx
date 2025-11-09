@@ -3,21 +3,111 @@
 import { useState } from 'react';
 import { CreditCardEntry } from '@/types';
 import { formatINR } from '@/utils/currency';
-import { Trash2, Plus, CreditCard, Edit2, Check } from 'lucide-react';
+import { Trash2, Plus, CreditCard, Edit2, Check, X as CloseIcon, GripVertical } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface CreditCardTrackerProps {
   entries: CreditCardEntry[];
   onAddEntry: (entry: { description: string; amount: number }) => void;
+  onUpdateEntry: (id: string, entry: { description: string; amount: number }) => void;
   onDeleteEntry: (id: string) => void;
+  onReorderEntries: (entries: CreditCardEntry[]) => void;
   loading: boolean;
   title: string;
   onTitleChange: (newTitle: string) => void;
 }
 
+// Sortable Entry Item Component
+function SortableEntryItem({
+  entry,
+  onEdit,
+  onDelete,
+  loading,
+}: {
+  entry: CreditCardEntry;
+  onEdit: (entry: CreditCardEntry) => void;
+  onDelete: (id: string) => void;
+  loading: boolean;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: entry.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-2 p-3 bg-gray-700 rounded-lg hover:bg-gray-650 transition-colors"
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-300"
+        aria-label="Drag to reorder"
+      >
+        <GripVertical size={20} />
+      </button>
+      <div className="flex-1">
+        <p className="text-white font-medium">{entry.description}</p>
+      </div>
+      <div className="flex items-center gap-3">
+        <span className="text-blue-400 font-semibold">
+          {formatINR(entry.amount)}
+        </span>
+        <button
+          onClick={() => onEdit(entry)}
+          disabled={loading}
+          className="p-1 text-blue-400 hover:text-blue-300 hover:bg-blue-400/10 rounded transition-colors disabled:opacity-50"
+          title="Edit entry"
+        >
+          <Edit2 size={18} />
+        </button>
+        <button
+          onClick={() => onDelete(entry.id)}
+          disabled={loading}
+          className="p-1 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded transition-colors disabled:opacity-50"
+          title="Delete entry"
+        >
+          <Trash2 size={18} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function CreditCardTracker({
   entries,
   onAddEntry,
+  onUpdateEntry,
   onDeleteEntry,
+  onReorderEntries,
   loading,
   title,
   onTitleChange
@@ -27,6 +117,14 @@ export default function CreditCardTracker({
   const [amount, setAmount] = useState('');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(title);
+  const [editingEntry, setEditingEntry] = useState<CreditCardEntry | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const totalBill = entries.reduce((sum, entry) => sum + entry.amount, 0);
 
@@ -40,6 +138,25 @@ export default function CreditCardTracker({
     setIsEditingTitle(false);
   };
 
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = entries.findIndex((e) => e.id === active.id);
+      const newIndex = entries.findIndex((e) => e.id === over.id);
+
+      const reorderedEntries = arrayMove(entries, oldIndex, newIndex);
+      onReorderEntries(reorderedEntries);
+    }
+  };
+
+  const handleEditEntry = (entry: CreditCardEntry) => {
+    setEditingEntry(entry);
+    setDescription(entry.description);
+    setAmount(entry.amount.toString());
+    setShowForm(true);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -48,14 +165,29 @@ export default function CreditCardTracker({
       return;
     }
 
-    onAddEntry({
-      description: description.trim(),
-      amount: parseFloat(amount)
-    });
+    if (editingEntry) {
+      onUpdateEntry(editingEntry.id, {
+        description: description.trim(),
+        amount: parseFloat(amount)
+      });
+    } else {
+      onAddEntry({
+        description: description.trim(),
+        amount: parseFloat(amount)
+      });
+    }
 
     setDescription('');
     setAmount('');
     setShowForm(false);
+    setEditingEntry(null);
+  };
+
+  const handleCancelForm = () => {
+    setShowForm(false);
+    setDescription('');
+    setAmount('');
+    setEditingEntry(null);
   };
 
   return (
@@ -122,9 +254,12 @@ export default function CreditCardTracker({
         </button>
       </div>
 
-      {/* Add Entry Form */}
+      {/* Add/Edit Entry Form */}
       {showForm && (
         <form onSubmit={handleSubmit} className="mb-4 p-4 bg-gray-700 rounded-lg">
+          <h3 className="text-lg font-medium text-white mb-3">
+            {editingEntry ? 'Edit Purchase' : 'Add Purchase'}
+          </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">
@@ -157,15 +292,11 @@ export default function CreditCardTracker({
               type="submit"
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Add Entry
+              {editingEntry ? 'Update Entry' : 'Add Entry'}
             </button>
             <button
               type="button"
-              onClick={() => {
-                setShowForm(false);
-                setDescription('');
-                setAmount('');
-              }}
+              onClick={handleCancelForm}
               className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-colors"
             >
               Cancel
@@ -179,29 +310,28 @@ export default function CreditCardTracker({
         {entries.length === 0 ? (
           <p className="text-gray-400 text-center py-4">No purchases recorded this month</p>
         ) : (
-          entries.map((entry) => (
-            <div
-              key={entry.id}
-              className="flex items-center justify-between p-3 bg-gray-700 rounded-lg hover:bg-gray-650 transition-colors"
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={entries.map((e) => e.id)}
+              strategy={verticalListSortingStrategy}
             >
-              <div className="flex-1">
-                <p className="text-white font-medium">{entry.description}</p>
+              <div className="space-y-2">
+                {entries.map((entry) => (
+                  <SortableEntryItem
+                    key={entry.id}
+                    entry={entry}
+                    onEdit={handleEditEntry}
+                    onDelete={onDeleteEntry}
+                    loading={loading}
+                  />
+                ))}
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-blue-400 font-semibold">
-                  {formatINR(entry.amount)}
-                </span>
-                <button
-                  onClick={() => onDeleteEntry(entry.id)}
-                  disabled={loading}
-                  className="p-1 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded transition-colors disabled:opacity-50"
-                  title="Delete entry"
-                >
-                  <Trash2 size={18} />
-                </button>
-              </div>
-            </div>
-          ))
+            </SortableContext>
+          </DndContext>
         )}
       </div>
 

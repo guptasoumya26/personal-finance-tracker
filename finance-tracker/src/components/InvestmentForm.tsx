@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Investment, INVESTMENT_CATEGORIES, InvestmentCategory, INVESTMENT_TYPES, InvestmentType } from '@/types';
 
@@ -25,6 +25,25 @@ export default function InvestmentForm({
     category: editingInvestment?.category || 'Other',
     investmentType: editingInvestment?.investmentType || 'Self',
   });
+
+  // Update form data when editingInvestment changes
+  useEffect(() => {
+    if (editingInvestment) {
+      setFormData({
+        name: editingInvestment.name,
+        amount: editingInvestment.amount.toString(),
+        category: editingInvestment.category,
+        investmentType: editingInvestment.investmentType,
+      });
+    } else {
+      setFormData({
+        name: '',
+        amount: '',
+        category: 'Other',
+        investmentType: 'Self',
+      });
+    }
+  }, [editingInvestment]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

@@ -124,6 +124,7 @@ export interface CreditCardEntry {
   description: string;
   amount: number;
   month: Date;
+  displayOrder?: number;
   createdAt: Date;
 }
 

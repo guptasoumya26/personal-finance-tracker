@@ -6,6 +6,9 @@
 
 -- === COMPLETE DATABASE RESET - UNCOMMENT TO USE ===
 -- Drop all existing tables and data
+DROP TABLE IF EXISTS external_investment_buffer CASCADE;
+DROP TABLE IF EXISTS income CASCADE;
+DROP TABLE IF EXISTS credit_card_entries CASCADE;
 DROP TABLE IF EXISTS notes CASCADE;
 DROP TABLE IF EXISTS investments CASCADE;
 DROP TABLE IF EXISTS central_investment_templates CASCADE;
@@ -89,6 +92,37 @@ CREATE TABLE IF NOT EXISTS notes (
     UNIQUE(user_id, month) -- One note per user per month
 );
 
+-- Credit Card Entries Table
+CREATE TABLE IF NOT EXISTS credit_card_entries (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    description VARCHAR(255) NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    month VARCHAR(7) NOT NULL, -- Format: YYYY-MM
+    display_order INTEGER,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Income Table
+CREATE TABLE IF NOT EXISTS income (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    source VARCHAR(255) NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    month VARCHAR(7) NOT NULL, -- Format: YYYY-MM
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- External Investment Buffer Table
+CREATE TABLE IF NOT EXISTS external_investment_buffer (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    description VARCHAR(255) NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    month VARCHAR(7) NOT NULL, -- Format: YYYY-MM
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
@@ -106,6 +140,12 @@ CREATE INDEX IF NOT EXISTS idx_investments_category ON investments(category);
 CREATE INDEX IF NOT EXISTS idx_investments_source_type ON investments(source_type);
 CREATE INDEX IF NOT EXISTS idx_notes_user_id ON notes(user_id);
 CREATE INDEX IF NOT EXISTS idx_notes_month ON notes(month);
+CREATE INDEX IF NOT EXISTS idx_credit_card_entries_user_id ON credit_card_entries(user_id);
+CREATE INDEX IF NOT EXISTS idx_credit_card_entries_month ON credit_card_entries(month);
+CREATE INDEX IF NOT EXISTS idx_income_user_id ON income(user_id);
+CREATE INDEX IF NOT EXISTS idx_income_month ON income(month);
+CREATE INDEX IF NOT EXISTS idx_external_investment_buffer_user_id ON external_investment_buffer(user_id);
+CREATE INDEX IF NOT EXISTS idx_external_investment_buffer_month ON external_investment_buffer(month);
 
 -- Update trigger for central_templates
 CREATE OR REPLACE FUNCTION update_updated_at_column()

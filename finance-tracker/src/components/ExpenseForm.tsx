@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Expense, EXPENSE_CATEGORIES, ExpenseCategory } from '@/types';
 
@@ -24,6 +24,23 @@ export default function ExpenseForm({
     amount: editingExpense?.amount?.toString() || '',
     category: editingExpense?.category || 'Other',
   });
+
+  // Update form data when editingExpense changes
+  useEffect(() => {
+    if (editingExpense) {
+      setFormData({
+        name: editingExpense.name,
+        amount: editingExpense.amount.toString(),
+        category: editingExpense.category,
+      });
+    } else {
+      setFormData({
+        name: '',
+        amount: '',
+        category: 'Other',
+      });
+    }
+  }, [editingExpense]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
