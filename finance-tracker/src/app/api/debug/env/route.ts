@@ -1,6 +1,16 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/auth-utils';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // Require admin authentication
+  try {
+    await requireAdmin(request);
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Admin access required' },
+      { status: 403 }
+    );
+  }
   try {
     const envCheck = {
       NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ? '✅ Set' : '❌ Missing',

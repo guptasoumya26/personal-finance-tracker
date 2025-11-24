@@ -1,6 +1,16 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/auth-utils';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // Require admin authentication
+  try {
+    await requireAdmin(request);
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Admin access required' },
+      { status: 403 }
+    );
+  }
   const results: any = {
     timestamp: new Date().toISOString(),
     tests: {}
