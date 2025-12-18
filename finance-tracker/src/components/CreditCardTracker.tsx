@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { CreditCardEntry } from '@/types';
 import { formatINR } from '@/utils/currency';
-import { Trash2, Plus, CreditCard, Edit2, Check, X as CloseIcon, GripVertical } from 'lucide-react';
+import { Trash2, Plus, CreditCard, Edit2, Check, GripVertical } from 'lucide-react';
 import {
   DndContext,
   closestCenter,

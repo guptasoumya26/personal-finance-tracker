@@ -137,7 +137,7 @@ export class AuthService {
       }
 
       return { user: data as User, error: null };
-    } catch (error) {
+    } catch {
       return { user: null, error: 'Failed to create user' };
     }
   }

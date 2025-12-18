@@ -9,6 +9,12 @@ export interface AuthenticatedUser {
   email?: string;
 }
 
+interface JWTPayload {
+  userId: string;
+  iat?: number;
+  exp?: number;
+}
+
 /**
  * Get the current authenticated user from the request
  * Returns null if no valid authentication is found
@@ -23,7 +29,7 @@ export async function getCurrentUser(request: NextRequest): Promise<Authenticate
       console.error('CRITICAL: JWT_SECRET environment variable is not set');
       return null;
     }
-    const payload = jwt.verify(authToken.value, jwtSecret) as any;
+    const payload = jwt.verify(authToken.value, jwtSecret) as JWTPayload;
 
     if (payload && payload.userId) {
       const user = await AuthService.getUserById(payload.userId);

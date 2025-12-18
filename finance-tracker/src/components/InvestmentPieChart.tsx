@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, defaults } from 'chart.js';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, defaults, TooltipItem } from 'chart.js';
 import { Pie } from 'react-chartjs-2';
 import { Investment } from '@/types';
 import { formatINR } from '@/utils/currency';
@@ -80,16 +80,16 @@ export default function InvestmentPieChart({ investments, monthName }: Investmen
             size: 14,
           },
           padding: 15,
-          generateLabels: (chart: any) => {
+          generateLabels: (chart: ChartJS) => {
             const data = chart.data;
-            if (data.labels.length && data.datasets.length) {
-              return data.labels.map((label: string, i: number) => {
-                const value = data.datasets[0].data[i];
+            if (data.labels && data.labels.length && data.datasets.length) {
+              return (data.labels as string[]).map((label: string, i: number) => {
+                const value = data.datasets[0].data[i] as number;
                 return {
                   text: `${label}: ${formatINR(value)}`,
-                  fillStyle: data.datasets[0].backgroundColor[i],
-                  strokeStyle: data.datasets[0].borderColor[i],
-                  lineWidth: data.datasets[0].borderWidth,
+                  fillStyle: (data.datasets[0].backgroundColor as string[])[i],
+                  strokeStyle: (data.datasets[0].borderColor as string[])[i],
+                  lineWidth: data.datasets[0].borderWidth as number,
                   fontColor: '#FFFFFF',
                   hidden: false,
                   index: i,
@@ -107,11 +107,11 @@ export default function InvestmentPieChart({ investments, monthName }: Investmen
         borderColor: '#374151',
         borderWidth: 1,
         callbacks: {
-          label: function(context: any) {
+          label: function(context: TooltipItem<'pie'>) {
             const value = context.parsed;
             const total = context.dataset.data.reduce((sum: number, val: number) => sum + val, 0);
             const percentage = ((value / total) * 100).toFixed(1);
-            const label = context.chart.data.labels[context.dataIndex];
+            const label = (context.chart.data.labels as string[])[context.dataIndex];
             return `${label}: ${formatINR(value)} (${percentage}%)`;
           }
         }

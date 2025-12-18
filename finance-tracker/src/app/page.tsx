@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Plus, Edit2, Trash2, Calendar, Settings, Menu, X, LogOut, GripVertical } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
@@ -229,23 +229,23 @@ export default function FinanceTracker() {
 
         // Load all expenses and investments for the chart data
         const allExpensesData = await api.fetchExpenses();
-        const mappedAllExpenses = allExpensesData.map((exp: any) => ({
+        const mappedAllExpenses = allExpensesData.map((exp: Record<string, unknown>) => ({
           ...exp,
-          sourceType: exp.source_type || 'manual', // Default to manual if not set
-          isCompleted: exp.is_completed ?? false,
-          month: new Date(exp.month + '-01'),
-          createdAt: new Date(exp.created_at)
+          sourceType: (exp.source_type as string) || 'manual', // Default to manual if not set
+          isCompleted: (exp.is_completed as boolean) ?? false,
+          month: new Date((exp.month as string) + '-01'),
+          createdAt: new Date(exp.created_at as string)
         }));
         setAllExpenses(mappedAllExpenses);
 
         const allInvestmentsData = await api.fetchInvestments();
-        const mappedAllInvestments = allInvestmentsData.map((inv: any) => ({
+        const mappedAllInvestments = allInvestmentsData.map((inv: Record<string, unknown>) => ({
           ...inv,
-          investmentType: inv.investment_type || 'Self',
-          sourceType: inv.source_type || 'manual', // Default to manual if not set
-          isCompleted: inv.is_completed ?? false,
-          month: new Date(inv.month + '-01'),
-          createdAt: new Date(inv.created_at)
+          investmentType: (inv.investment_type as string) || 'Self',
+          sourceType: (inv.source_type as string) || 'manual', // Default to manual if not set
+          isCompleted: (inv.is_completed as boolean) ?? false,
+          month: new Date((inv.month as string) + '-01'),
+          createdAt: new Date(inv.created_at as string)
         }));
         setAllInvestments(mappedAllInvestments);
 
@@ -275,36 +275,36 @@ export default function FinanceTracker() {
 
         // Load expenses for current month
         const expenses = await api.fetchExpenses(monthKey);
-        const mappedExpenses = expenses.map((exp: any) => ({
+        const mappedExpenses = expenses.map((exp: Record<string, unknown>) => ({
           ...exp,
-          sourceType: exp.source_type || 'manual', // Default to manual if not set
-          displayOrder: exp.display_order ?? 0,
-          isCompleted: exp.is_completed ?? false,
-          month: new Date(exp.month + '-01'),
-          createdAt: new Date(exp.created_at)
+          sourceType: (exp.source_type as string) || 'manual', // Default to manual if not set
+          displayOrder: (exp.display_order as number) ?? 0,
+          isCompleted: (exp.is_completed as boolean) ?? false,
+          month: new Date((exp.month as string) + '-01'),
+          createdAt: new Date(exp.created_at as string)
         }));
         setMonthlyExpenses(mappedExpenses);
 
         // Load investments for current month
         const investments = await api.fetchInvestments(monthKey);
-        const mappedInvestments = investments.map((inv: any) => ({
+        const mappedInvestments = investments.map((inv: Record<string, unknown>) => ({
           ...inv,
-          investmentType: inv.investment_type || 'Self',
-          sourceType: inv.source_type || 'manual', // Default to manual if not set
-          displayOrder: inv.display_order ?? 0,
-          isCompleted: inv.is_completed ?? false,
-          month: new Date(inv.month + '-01'),
-          createdAt: new Date(inv.created_at)
+          investmentType: (inv.investment_type as string) || 'Self',
+          sourceType: (inv.source_type as string) || 'manual', // Default to manual if not set
+          displayOrder: (inv.display_order as number) ?? 0,
+          isCompleted: (inv.is_completed as boolean) ?? false,
+          month: new Date((inv.month as string) + '-01'),
+          createdAt: new Date(inv.created_at as string)
         }));
         setMonthlyInvestments(mappedInvestments);
 
         // Load credit card entries for current month
         setLoadingCreditCard(true);
         const creditCardData = await api.fetchCreditCardEntries(monthKey);
-        const mappedCreditCard = creditCardData.map((entry: any) => ({
+        const mappedCreditCard = creditCardData.map((entry: Record<string, unknown>) => ({
           ...entry,
-          month: new Date(entry.month + '-01'),
-          createdAt: new Date(entry.created_at)
+          month: new Date((entry.month as string) + '-01'),
+          createdAt: new Date(entry.created_at as string)
         }));
         setCreditCardEntries(mappedCreditCard);
         setLoadingCreditCard(false);
@@ -312,10 +312,10 @@ export default function FinanceTracker() {
         // Load income for current month
         setLoadingIncome(true);
         const incomeData = await api.fetchIncome(monthKey);
-        const mappedIncome = incomeData.map((income: any) => ({
+        const mappedIncome = incomeData.map((income: Record<string, unknown>) => ({
           ...income,
-          month: new Date(income.month + '-01'),
-          createdAt: new Date(income.created_at)
+          month: new Date((income.month as string) + '-01'),
+          createdAt: new Date(income.created_at as string)
         }));
         setIncomes(mappedIncome);
         setLoadingIncome(false);
@@ -323,10 +323,10 @@ export default function FinanceTracker() {
         // Load external investment buffer for current month
         setLoadingExternalBuffer(true);
         const externalBufferData = await api.fetchExternalInvestmentBuffer(monthKey);
-        const mappedExternalBuffer = externalBufferData.map((buffer: any) => ({
+        const mappedExternalBuffer = externalBufferData.map((buffer: Record<string, unknown>) => ({
           ...buffer,
-          month: new Date(buffer.month + '-01'),
-          createdAt: new Date(buffer.created_at)
+          month: new Date((buffer.month as string) + '-01'),
+          createdAt: new Date(buffer.created_at as string)
         }));
         setExternalBuffers(mappedExternalBuffer);
         setLoadingExternalBuffer(false);
@@ -471,7 +471,7 @@ export default function FinanceTracker() {
           amount: item.amount,
           category: item.category,
           month: monthKey,
-          source_type: 'template' as const
+          sourceType: 'template' as const
         };
 
         const createdExpense = await api.createExpense(expenseData);
@@ -564,9 +564,9 @@ export default function FinanceTracker() {
           name: item.name,
           amount: item.amount,
           category: item.category,
-          investment_type: item.investmentType || 'Self',
+          investmentType: item.investmentType || 'Self',
           month: monthKey,
-          source_type: 'template' as const
+          sourceType: 'template' as const
         };
 
         const createdInvestment = await api.createInvestment(investmentData);
@@ -634,7 +634,7 @@ export default function FinanceTracker() {
         amount: expense.amount,
         category: expense.category,
         month: api.formatMonthForAPI(expense.month),
-        source_type: expense.sourceType
+        sourceType: expense.sourceType
       };
 
       const createdExpense = await api.createExpense(expenseData);
@@ -662,7 +662,7 @@ export default function FinanceTracker() {
         amount: expense.amount,
         category: expense.category,
         month: api.formatMonthForAPI(expense.month),
-        source_type: expense.sourceType
+        sourceType: expense.sourceType
       };
 
       const updatedExpense = await api.updateExpense(expenseData);
@@ -738,9 +738,9 @@ export default function FinanceTracker() {
         name: investment.name,
         amount: investment.amount,
         category: investment.category,
-        investment_type: investment.investmentType || 'Self',
+        investmentType: investment.investmentType || 'Self',
         month: api.formatMonthForAPI(investment.month),
-        source_type: investment.sourceType
+        sourceType: investment.sourceType
       };
 
       const createdInvestment = await api.createInvestment(investmentData);
@@ -768,9 +768,9 @@ export default function FinanceTracker() {
         name: investment.name,
         amount: investment.amount,
         category: investment.category,
-        investment_type: investment.investmentType || 'Self',
+        investmentType: investment.investmentType || 'Self',
         month: api.formatMonthForAPI(investment.month),
-        source_type: investment.sourceType
+        sourceType: investment.sourceType
       };
 
       const updatedInvestment = await api.updateInvestment(investmentData);
@@ -909,7 +909,7 @@ export default function FinanceTracker() {
     try {
       const entriesWithOrder = reorderedEntries.map((entry, index) => ({
         id: entry.id,
-        display_order: index
+        displayOrder: index
       }));
 
       await api.reorderCreditCardEntries(entriesWithOrder);
@@ -918,10 +918,10 @@ export default function FinanceTracker() {
       // Revert to original order on error
       const monthKey = api.formatMonthForAPI(currentMonth);
       const entries = await api.fetchCreditCardEntries(monthKey);
-      const mappedEntries = entries.map((entry: any) => ({
+      const mappedEntries = entries.map((entry: Record<string, unknown>) => ({
         ...entry,
-        month: new Date(entry.month + '-01'),
-        createdAt: new Date(entry.created_at)
+        month: new Date((entry.month as string) + '-01'),
+        createdAt: new Date(entry.created_at as string)
       }));
       setCreditCardEntries(mappedEntries);
       alert('Failed to reorder credit card entries. Please try again.');

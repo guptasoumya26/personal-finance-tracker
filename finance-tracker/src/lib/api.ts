@@ -1,4 +1,13 @@
 // API utility functions for database operations
+import {
+  TemplateItem,
+  InvestmentTemplateItem,
+  Expense,
+  Investment,
+  CreditCardEntry,
+  Income,
+  ExternalInvestmentBuffer
+} from '@/types';
 
 export async function fetchCentralTemplate() {
   const response = await fetch('/api/central-template');
@@ -9,7 +18,7 @@ export async function fetchCentralTemplate() {
   return result.data;
 }
 
-export async function saveCentralTemplate(items: any[]) {
+export async function saveCentralTemplate(items: TemplateItem[]) {
   const response = await fetch('/api/central-template', {
     method: 'POST',
     headers: {
@@ -24,7 +33,7 @@ export async function saveCentralTemplate(items: any[]) {
   return result.data;
 }
 
-export async function updateCentralTemplate(items: any[]) {
+export async function updateCentralTemplate(items: TemplateItem[]) {
   const response = await fetch('/api/central-template', {
     method: 'PUT',
     headers: {
@@ -50,7 +59,7 @@ export async function fetchExpenses(month?: string) {
   return result.data;
 }
 
-export async function createExpense(expense: any) {
+export async function createExpense(expense: Omit<Expense, 'id' | 'createdAt' | 'month'> & { month: Date | string }) {
   const response = await fetch('/api/expenses', {
     method: 'POST',
     headers: {
@@ -65,7 +74,7 @@ export async function createExpense(expense: any) {
   return result.data;
 }
 
-export async function updateExpense(expense: any) {
+export async function updateExpense(expense: Partial<Omit<Expense, 'month'>> & { id: string; month?: Date | string }) {
   const response = await fetch('/api/expenses', {
     method: 'PUT',
     headers: {
@@ -116,7 +125,7 @@ export async function fetchInvestments(month?: string) {
   return result.data;
 }
 
-export async function createInvestment(investment: any) {
+export async function createInvestment(investment: Omit<Investment, 'id' | 'createdAt' | 'month'> & { month: Date | string }) {
   const response = await fetch('/api/investments', {
     method: 'POST',
     headers: {
@@ -141,7 +150,7 @@ export async function fetchCentralInvestmentTemplate() {
   return result.data;
 }
 
-export async function saveCentralInvestmentTemplate(items: any[]) {
+export async function saveCentralInvestmentTemplate(items: InvestmentTemplateItem[]) {
   const response = await fetch('/api/central-investment-template', {
     method: 'POST',
     headers: {
@@ -156,7 +165,7 @@ export async function saveCentralInvestmentTemplate(items: any[]) {
   return result.data;
 }
 
-export async function updateCentralInvestmentTemplate(items: any[]) {
+export async function updateCentralInvestmentTemplate(items: InvestmentTemplateItem[]) {
   const response = await fetch('/api/central-investment-template', {
     method: 'PUT',
     headers: {
@@ -171,7 +180,7 @@ export async function updateCentralInvestmentTemplate(items: any[]) {
   return result.data;
 }
 
-export async function updateInvestment(investment: any) {
+export async function updateInvestment(investment: Partial<Omit<Investment, 'month'>> & { id: string; month?: Date | string }) {
   const response = await fetch('/api/investments', {
     method: 'PUT',
     headers: {
@@ -222,7 +231,7 @@ export async function fetchNote() {
 }
 
 export async function saveNote(content: string, credit_card_tracker_title?: string) {
-  const body: any = { content };
+  const body: { content: string; credit_card_tracker_title?: string } = { content };
   if (credit_card_tracker_title !== undefined) {
     body.credit_card_tracker_title = credit_card_tracker_title;
   }
@@ -251,7 +260,7 @@ export async function fetchCreditCardEntries(month?: string) {
   return result.data;
 }
 
-export async function createCreditCardEntry(entry: any) {
+export async function createCreditCardEntry(entry: Omit<CreditCardEntry, 'id' | 'createdAt' | 'month'> & { month: Date | string }) {
   const response = await fetch('/api/credit-card-entries', {
     method: 'POST',
     headers: {
@@ -266,7 +275,7 @@ export async function createCreditCardEntry(entry: any) {
   return result.data;
 }
 
-export async function updateCreditCardEntry(id: string, entry: any) {
+export async function updateCreditCardEntry(id: string, entry: Partial<Omit<CreditCardEntry, 'month'>> & { month?: Date | string }) {
   const response = await fetch('/api/credit-card-entries', {
     method: 'PUT',
     headers: {
@@ -291,7 +300,7 @@ export async function deleteCreditCardEntry(id: string) {
   return true;
 }
 
-export async function reorderCreditCardEntries(entries: any[]) {
+export async function reorderCreditCardEntries(entries: Array<{ id: string; displayOrder: number }>) {
   const response = await fetch('/api/credit-card-entries/reorder', {
     method: 'POST',
     headers: {
@@ -316,7 +325,7 @@ export async function fetchIncome(month?: string) {
   return result.data;
 }
 
-export async function createIncome(income: any) {
+export async function createIncome(income: Omit<Income, 'id' | 'createdAt' | 'month'> & { month: Date | string }) {
   const response = await fetch('/api/income', {
     method: 'POST',
     headers: {
@@ -352,7 +361,7 @@ export async function fetchExternalInvestmentBuffer(month?: string) {
   return result.data;
 }
 
-export async function createExternalInvestmentBuffer(buffer: any) {
+export async function createExternalInvestmentBuffer(buffer: Omit<ExternalInvestmentBuffer, 'id' | 'createdAt' | 'month'> & { month: Date | string }) {
   const response = await fetch('/api/external-investment-buffer', {
     method: 'POST',
     headers: {

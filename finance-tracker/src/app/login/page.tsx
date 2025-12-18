@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Lock, User } from 'lucide-react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Link from 'next/link';
@@ -10,7 +9,6 @@ export default function LoginPage() {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,7 +122,7 @@ export default function LoginPage() {
         <div className="text-center">
           <p className="text-sm text-gray-400 mb-2">Secure access to your personal finance data</p>
           <p className="text-sm text-gray-400">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link href="/signup" className="text-blue-400 hover:text-blue-300 transition-colors">
               Sign up here
             </Link>

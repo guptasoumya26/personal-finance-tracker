@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     let result;
     if (existing) {
       // Update existing note
-      const updateData: any = { content, updated_at: new Date().toISOString() };
+      const updateData: { content: string; updated_at: string; credit_card_tracker_title?: string } = { content, updated_at: new Date().toISOString() };
       if (credit_card_tracker_title !== undefined) {
         updateData.credit_card_tracker_title = credit_card_tracker_title;
       }
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
         .single();
     } else {
       // Create new note
-      const insertData: any = { user_id: user.id, content };
+      const insertData: { user_id: string; content: string; credit_card_tracker_title?: string } = { user_id: user.id, content };
       if (credit_card_tracker_title !== undefined) {
         insertData.credit_card_tracker_title = credit_card_tracker_title;
       }

@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, defaults } from 'chart.js';
+import { useRef } from 'react';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, defaults, TooltipItem } from 'chart.js';
 import { Pie } from 'react-chartjs-2';
 import { Expense } from '@/types';
 import { formatINR } from '@/utils/currency';
@@ -71,18 +71,18 @@ export default function ExpensePieChart({ expenses, monthName }: ExpensePieChart
             size: 12,
           },
           padding: 15,
-          generateLabels: (chart: any) => {
+          generateLabels: (chart: ChartJS) => {
             const data = chart.data;
-            if (data.labels.length && data.datasets.length) {
-              return data.labels.map((label: string, i: number) => {
-                const value = data.datasets[0].data[i];
+            if (data.labels && data.labels.length && data.datasets.length) {
+              return (data.labels as string[]).map((label: string, i: number) => {
+                const value = data.datasets[0].data[i] as number;
                 // Truncate long labels but show full text in tooltip
                 const displayLabel = label.length > 20 ? `${label.substring(0, 17)}...` : label;
                 return {
                   text: `${displayLabel}: ${formatINR(value)}`,
-                  fillStyle: data.datasets[0].backgroundColor[i],
-                  strokeStyle: data.datasets[0].borderColor[i],
-                  lineWidth: data.datasets[0].borderWidth,
+                  fillStyle: (data.datasets[0].backgroundColor as string[])[i],
+                  strokeStyle: (data.datasets[0].borderColor as string[])[i],
+                  lineWidth: data.datasets[0].borderWidth as number,
                   fontColor: '#FFFFFF',
                   hidden: false,
                   index: i,
@@ -100,12 +100,12 @@ export default function ExpensePieChart({ expenses, monthName }: ExpensePieChart
         borderColor: '#374151',
         borderWidth: 1,
         callbacks: {
-          label: function(context: any) {
+          label: function(context: TooltipItem<'pie'>) {
             const value = context.parsed;
             const total = context.dataset.data.reduce((sum: number, val: number) => sum + val, 0);
             const percentage = ((value / total) * 100).toFixed(1);
             // Show full label in tooltip (not truncated)
-            const fullLabel = context.chart.data.labels[context.dataIndex];
+            const fullLabel = (context.chart.data.labels as string[])[context.dataIndex];
             return `${fullLabel}: ${formatINR(value)} (${percentage}%)`;
           }
         }

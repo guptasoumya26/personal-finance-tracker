@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { AuthService } from '@/lib/auth';
 import jwt from 'jsonwebtoken';
+
+interface JWTPayload {
+  userId: string;
+  iat?: number;
+  exp?: number;
+}
 
 async function getCurrentUser(request: NextRequest) {
   const authToken = request.cookies.get('auth-token');
@@ -13,7 +18,7 @@ async function getCurrentUser(request: NextRequest) {
       console.error('CRITICAL: JWT_SECRET environment variable is not set');
       return null;
     }
-    const payload = jwt.verify(authToken.value, jwtSecret) as any;
+    const payload = jwt.verify(authToken.value, jwtSecret) as JWTPayload;
     if (payload && payload.userId) {
       return await AuthService.getUserById(payload.userId);
     }
