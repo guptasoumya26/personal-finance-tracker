@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSupabaseServerClient } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 
 /**
  * Keep-Alive Cron Job
@@ -21,11 +21,9 @@ export async function GET(request: Request) {
       );
     }
 
-    const supabase = getSupabaseServerClient();
-
     // Perform a lightweight query to show database activity
     // Just count users - this is fast and doesn't return sensitive data
-    const { count, error } = await supabase
+    const { count, error } = await supabaseAdmin
       .from('users')
       .select('*', { count: 'exact', head: true });
 
