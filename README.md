@@ -79,9 +79,10 @@ Create a `.env.local` file in the `finance-tracker` directory:
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 JWT_SECRET=your_generated_jwt_secret_key
+CRON_SECRET=your_generated_cron_secret_key
 ```
 
-Generate a secure JWT secret:
+Generate secure secrets:
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
@@ -264,9 +265,15 @@ git push origin main
      ```
      NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
      NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_key
+     JWT_SECRET=your_generated_jwt_secret
+     CRON_SECRET=your_generated_cron_secret
      ```
 
 3. **Deploy**: Vercel will automatically build and deploy your app!
+
+### 🔄 Automatic Database Keep-Alive
+
+The app includes a Vercel Cron job that automatically pings your Supabase database every 6 days to prevent it from being paused on the free tier. This runs automatically once deployed to Vercel - no additional setup required!
 
 ## 📧 Environment Variables
 
@@ -275,8 +282,9 @@ git push origin main
 | `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL | ✅ |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase anonymous key | ✅ |
 | `JWT_SECRET` | Secret key for JWT token signing (generate a secure random string) | ✅ |
+| `CRON_SECRET` | Secret key for Vercel Cron authentication (generate a secure random string) | ✅ |
 
-**Note**: You can generate a secure JWT_SECRET using:
+**Note**: You can generate secure secrets using:
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```

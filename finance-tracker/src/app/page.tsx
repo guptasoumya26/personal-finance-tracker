@@ -1061,8 +1061,8 @@ export default function FinanceTracker() {
     const investmentChartData = new Array(12).fill(0);
     const selfInvestmentChartData = new Array(12).fill(0);
 
-    // Only include data from 2025 to avoid phantom entries from other years
-    const currentYear = 2025;
+    // Only include data from current year to avoid phantom entries from other years
+    const currentYear = new Date().getFullYear();
 
     // Calculate expenses by month - only from current year
     allExpenses.forEach(expense => {

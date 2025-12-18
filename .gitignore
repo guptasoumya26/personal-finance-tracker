@@ -114,3 +114,22 @@ temp/
 
 # Local development
 .local
+
+# Documentation and temporary files
+*.md.backup
+DEPLOYMENT_CHECKLIST.md
+NOTES_UPDATE_GUIDE.md
+SECURITY_*.md
+cookies.txt
+nul
+
+# Screenshots and images (except in specific directories)
+/*.png
+/*.jpg
+/*.jpeg
+/*.gif
+
+# Root level package files (app is in finance-tracker/)
+/package.json
+/package-lock.json
+/node_modules/
