@@ -131,7 +131,11 @@ export async function createInvestment(investment: Omit<Investment, 'id' | 'crea
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(investment),
+    body: JSON.stringify({
+      ...investment,
+      investment_type: investment.investmentType,
+      source_type: investment.sourceType,
+    }),
   });
   if (!response.ok) {
     throw new Error('Failed to create investment');
@@ -186,7 +190,11 @@ export async function updateInvestment(investment: Partial<Omit<Investment, 'mon
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(investment),
+    body: JSON.stringify({
+      ...investment,
+      investment_type: investment.investmentType,
+      source_type: investment.sourceType,
+    }),
   });
   if (!response.ok) {
     throw new Error('Failed to update investment');
