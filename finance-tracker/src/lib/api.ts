@@ -65,7 +65,10 @@ export async function createExpense(expense: Omit<Expense, 'id' | 'createdAt' | 
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(expense),
+    body: JSON.stringify({
+      ...expense,
+      source_type: expense.sourceType,
+    }),
   });
   if (!response.ok) {
     throw new Error('Failed to create expense');
@@ -80,7 +83,10 @@ export async function updateExpense(expense: Partial<Omit<Expense, 'month'>> & {
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(expense),
+    body: JSON.stringify({
+      ...expense,
+      source_type: expense.sourceType,
+    }),
   });
   if (!response.ok) {
     throw new Error('Failed to update expense');
