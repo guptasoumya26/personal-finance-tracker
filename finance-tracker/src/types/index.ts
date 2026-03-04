@@ -31,10 +31,11 @@ export const INVESTMENT_CATEGORIES = [
 
 export type InvestmentCategory = typeof INVESTMENT_CATEGORIES[number];
 
-// Investment Type (Self, Combined, Other)
+// Investment Type (Self, Combined, One Time, Other)
 export const INVESTMENT_TYPES = [
   'Self',
   'Combined',
+  'One Time',
   'Other'
 ] as const;
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Plus, Edit2, Trash2, Calendar, Settings, Menu, X, LogOut, GripVertical } from 'lucide-react';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent, useDroppable, DragOverEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 // import RecurringTemplates from '@/components/RecurringTemplates';
@@ -18,7 +18,7 @@ import CreditCardTracker from '@/components/CreditCardTracker';
 import IncomeTracker from '@/components/IncomeTracker';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Toast from '@/components/Toast';
-import { Expense, Investment, CentralTemplate, CentralInvestmentTemplate, CreditCardEntry, Income, ExternalInvestmentBuffer } from '@/types';
+import { Expense, Investment, InvestmentType, CentralTemplate, CentralInvestmentTemplate, CreditCardEntry, Income, ExternalInvestmentBuffer } from '@/types';
 import { formatINR } from '@/utils/currency';
 import * as api from '@/lib/api';
 
@@ -118,26 +118,88 @@ export default function FinanceTracker() {
     }
   };
 
-  // Handle investment reorder
+  // Investment section types for drag-and-drop
+  const INVESTMENT_SECTIONS: InvestmentType[] = ['Self', 'Combined', 'One Time', 'Other'];
+
+  const getInvestmentSection = (investmentId: string | number): InvestmentType | null => {
+    const inv = currentMonthInvestments.find(i => i.id === investmentId);
+    return inv ? (inv.investmentType || 'Self') : null;
+  };
+
+  // Handle investment reorder (supports cross-section drag-and-drop)
   const handleInvestmentDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
+    if (!over) return;
 
-    if (over && active.id !== over.id) {
-      const oldIndex = currentMonthInvestments.findIndex((inv) => inv.id === active.id);
-      const newIndex = currentMonthInvestments.findIndex((inv) => inv.id === over.id);
+    const activeId = active.id as string;
+    const overId = over.id as string;
 
-      const reorderedInvestments = arrayMove(currentMonthInvestments, oldIndex, newIndex);
+    // Check if dropped on a section droppable (e.g., "section-Self")
+    const isDroppedOnSection = INVESTMENT_SECTIONS.some(s => overId === `section-${s}`);
+    const activeSection = getInvestmentSection(activeId);
+    let targetSection: InvestmentType | null = null;
 
-      // Update display_order for all items
-      const updatedInvestments = reorderedInvestments.map((inv, index) => ({
+    if (isDroppedOnSection) {
+      targetSection = overId.replace('section-', '') as InvestmentType;
+    } else {
+      targetSection = getInvestmentSection(overId);
+    }
+
+    if (!activeSection || !targetSection) return;
+
+    const isCrossSection = activeSection !== targetSection;
+
+    if (isCrossSection) {
+      // Cross-section move: update investmentType
+      const movedInvestment = currentMonthInvestments.find(inv => inv.id === activeId);
+      if (!movedInvestment) return;
+
+      // Optimistically update UI
+      setMonthlyInvestments(prev =>
+        prev.map(inv => inv.id === activeId ? { ...inv, investmentType: targetSection } : inv)
+      );
+      setAllInvestments(prev =>
+        prev.map(inv => inv.id === activeId ? { ...inv, investmentType: targetSection } : inv)
+      );
+
+      // Update backend
+      try {
+        await api.updateInvestment({
+          id: activeId,
+          investmentType: targetSection,
+          month: api.formatMonthForAPI(movedInvestment.month),
+        });
+      } catch (error) {
+        console.error('Failed to move investment to new section:', error);
+        showToast('Failed to move investment', 'warning');
+        // Revert
+        setMonthlyInvestments(prev =>
+          prev.map(inv => inv.id === activeId ? { ...inv, investmentType: activeSection } : inv)
+        );
+        setAllInvestments(prev =>
+          prev.map(inv => inv.id === activeId ? { ...inv, investmentType: activeSection } : inv)
+        );
+      }
+    } else if (activeId !== overId && !isDroppedOnSection) {
+      // Same-section reorder
+      const sectionInvestments = currentMonthInvestments.filter(
+        inv => (inv.investmentType || 'Self') === activeSection
+      );
+      const oldIndex = sectionInvestments.findIndex(inv => inv.id === activeId);
+      const newIndex = sectionInvestments.findIndex(inv => inv.id === overId);
+
+      if (oldIndex === -1 || newIndex === -1) return;
+
+      const reordered = arrayMove(sectionInvestments, oldIndex, newIndex);
+      const updatedInvestments = reordered.map((inv, index) => ({
         ...inv,
         displayOrder: index
       }));
 
       // Optimistically update UI
-      setMonthlyInvestments((prev) =>
-        prev.map((inv) => {
-          const updated = updatedInvestments.find((i) => i.id === inv.id);
+      setMonthlyInvestments(prev =>
+        prev.map(inv => {
+          const updated = updatedInvestments.find(i => i.id === inv.id);
           return updated || inv;
         })
       );
@@ -148,7 +210,7 @@ export default function FinanceTracker() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            investments: updatedInvestments.map((inv) => ({
+            investments: updatedInvestments.map(inv => ({
               id: inv.id,
               display_order: inv.displayOrder
             }))
@@ -1251,6 +1313,7 @@ export default function FinanceTracker() {
             <span className={`text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded whitespace-nowrap ${
               investment.investmentType === 'Self' ? 'bg-green-600 text-white' :
               investment.investmentType === 'Combined' ? 'bg-purple-600 text-white' :
+              investment.investmentType === 'One Time' ? 'bg-amber-600 text-white' :
               'bg-gray-600 text-white'
             }`}>
               {investment.investmentType || 'Self'}
@@ -1298,6 +1361,50 @@ export default function FinanceTracker() {
             </button>
           </div>
         </div>
+      </div>
+    );
+  };
+
+  // Droppable Investment Section Component
+  const SECTION_COLORS: Record<InvestmentType, { border: string; text: string; bg: string }> = {
+    'Self': { border: 'border-green-500/40', text: 'text-green-400', bg: 'bg-green-500/10' },
+    'Combined': { border: 'border-purple-500/40', text: 'text-purple-400', bg: 'bg-purple-500/10' },
+    'One Time': { border: 'border-amber-500/40', text: 'text-amber-400', bg: 'bg-amber-500/10' },
+    'Other': { border: 'border-gray-500/40', text: 'text-gray-400', bg: 'bg-gray-500/10' },
+  };
+
+  const DroppableInvestmentSection = ({ type, investments: sectionInvestments }: { type: InvestmentType; investments: Investment[] }) => {
+    const { setNodeRef, isOver } = useDroppable({ id: `section-${type}` });
+    const colors = SECTION_COLORS[type];
+    const sectionTotal = sectionInvestments.reduce((sum, inv) => sum + inv.amount, 0);
+
+    return (
+      <div
+        ref={setNodeRef}
+        className={`rounded-lg border ${colors.border} ${isOver ? colors.bg : ''} transition-colors`}
+      >
+        <div className="flex items-center justify-between px-3 py-2">
+          <h4 className={`text-sm font-medium ${colors.text}`}>{type}</h4>
+          {sectionTotal > 0 && (
+            <span className={`text-xs ${colors.text}`}>{formatINR(sectionTotal)}</span>
+          )}
+        </div>
+        <SortableContext
+          items={sectionInvestments.map(inv => inv.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <div className="px-2 pb-2 space-y-2">
+            {sectionInvestments.length > 0 ? (
+              sectionInvestments.map(investment => (
+                <SortableInvestmentItem key={investment.id} investment={investment} />
+              ))
+            ) : (
+              <p className="text-xs text-gray-500 text-center py-2">
+                {isOver ? 'Drop here' : 'No entries'}
+              </p>
+            )}
+          </div>
+        </SortableContext>
       </div>
     );
   };
@@ -1685,7 +1792,7 @@ export default function FinanceTracker() {
                 Add Investment
               </button>
 
-              {/* Monthly Investments */}
+              {/* Monthly Investments - Grouped by Section */}
               <div className="space-y-2 sm:space-y-3">
                 <h3 className="font-medium mb-2 sm:mb-3 text-sm sm:text-base">Monthly Investments</h3>
 
@@ -1693,28 +1800,27 @@ export default function FinanceTracker() {
                   <div className="flex items-center justify-center py-8">
                     <LoadingSpinner />
                   </div>
-                ) : currentMonthInvestments.length > 0 ? (
+                ) : (
                   <DndContext
                     sensors={sensors}
                     collisionDetection={closestCenter}
                     onDragEnd={handleInvestmentDragEnd}
                   >
-                    <SortableContext
-                      items={currentMonthInvestments.map((inv) => inv.id)}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      <div className="space-y-2 sm:space-y-3">
-                        {currentMonthInvestments.map((investment) => (
-                          <SortableInvestmentItem key={investment.id} investment={investment} />
-                        ))}
-                      </div>
-                    </SortableContext>
+                    <div className="space-y-3">
+                      {INVESTMENT_SECTIONS.map(sectionType => {
+                        const sectionInvestments = currentMonthInvestments.filter(
+                          inv => (inv.investmentType || 'Self') === sectionType
+                        );
+                        return (
+                          <DroppableInvestmentSection
+                            key={sectionType}
+                            type={sectionType}
+                            investments={sectionInvestments}
+                          />
+                        );
+                      })}
+                    </div>
                   </DndContext>
-                ) : (
-                  <div className="text-center text-gray-400 py-6 sm:py-8">
-                    <p className="text-sm sm:text-base">No investments recorded this month</p>
-                    <p className="text-xs sm:text-sm mt-1">Start tracking your investments</p>
-                  </div>
                 )}
               </div>
 

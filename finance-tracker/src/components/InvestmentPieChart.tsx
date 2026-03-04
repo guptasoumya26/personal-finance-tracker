@@ -17,17 +17,18 @@ interface InvestmentPieChartProps {
 export default function InvestmentPieChart({ investments, monthName }: InvestmentPieChartProps) {
   const chartRef = useRef(null);
 
-  // Aggregate investments by investment type (Self, Combined, Other)
+  // Aggregate investments by investment type (Self, Combined, One Time, Other)
   const aggregateByType = () => {
     const typeTotals: Record<string, number> = {
       'Self': 0,
       'Combined': 0,
+      'One Time': 0,
       'Other': 0
     };
 
     investments.forEach(investment => {
       const type = investment.investmentType || 'Self';
-      typeTotals[type] += investment.amount;
+      typeTotals[type] = (typeTotals[type] || 0) + investment.amount;
     });
 
     return typeTotals;
@@ -43,6 +44,7 @@ export default function InvestmentPieChart({ investments, monthName }: Investmen
   const colorMap: Record<string, string> = {
     'Self': '#10B981',      // Green
     'Combined': '#8B5CF6',  // Purple
+    'One Time': '#F59E0B',  // Amber
     'Other': '#6B7280'      // Gray
   };
 
