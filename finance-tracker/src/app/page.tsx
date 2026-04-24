@@ -602,14 +602,19 @@ export default function FinanceTracker() {
         await api.deleteInvestment(investment.id);
       }
 
+      // Build a list of remaining investments excluding the ones we just deleted
+      const deletedIds = new Set(existingTemplateInvestments.map(inv => inv.id));
+      const remainingInvestments = monthlyInvestments.filter(inv => !deletedIds.has(inv.id));
+
       // Create new investments from template
       const newInvestments: Investment[] = [];
       const skippedItems: string[] = [];
 
       for (const item of centralInvestmentTemplate.items) {
-        // Additional check: Skip if an investment with similar name already exists for this month
-        const existingInvestmentWithSimilarName = monthlyInvestments.find(inv =>
+        // Additional check: Skip if an investment with similar name and same type already exists for this month
+        const existingInvestmentWithSimilarName = remainingInvestments.find(inv =>
           areNamesSimilar(inv.name, item.name) &&
+          inv.investmentType === (item.investmentType || 'Self') &&
           inv.month.getMonth() === currentMonth.getMonth() &&
           inv.month.getFullYear() === currentMonth.getFullYear()
         );
