@@ -400,6 +400,42 @@ export async function deleteExternalInvestmentBuffer(id: string) {
   return true;
 }
 
+// Net Worth API
+export async function fetchNetWorth(month?: string) {
+  const url = month ? `/api/net-worth?month=${month}` : '/api/net-worth';
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('Failed to fetch net worth entries');
+  }
+  const result = await response.json();
+  return result.data;
+}
+
+export async function saveNetWorth(entry: { amount: number; month: Date | string }) {
+  const response = await fetch('/api/net-worth', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(entry),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to save net worth entry');
+  }
+  const result = await response.json();
+  return result.data;
+}
+
+export async function deleteNetWorth(id: string) {
+  const response = await fetch(`/api/net-worth?id=${id}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to delete net worth entry');
+  }
+  return true;
+}
+
 // Utility function to format month for API calls
 export function formatMonthForAPI(date: Date): string {
   const year = date.getFullYear();

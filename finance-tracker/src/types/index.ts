@@ -147,3 +147,11 @@ export interface ExternalInvestmentBuffer {
   createdAt: Date;
 }
 
+// Net Worth Entry - one manually entered total per user per month
+export interface NetWorthEntry {
+  id: string;
+  amount: number;
+  month: Date;
+  createdAt: Date;
+}
+

@@ -18,7 +18,9 @@ import CreditCardTracker from '@/components/CreditCardTracker';
 import IncomeTracker from '@/components/IncomeTracker';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Toast from '@/components/Toast';
-import { Expense, Investment, InvestmentType, CentralTemplate, CentralInvestmentTemplate, CreditCardEntry, Income, ExternalInvestmentBuffer } from '@/types';
+import NetWorthForm from '@/components/NetWorthForm';
+import NetWorthChart from '@/components/NetWorthChart';
+import { Expense, Investment, InvestmentType, CentralTemplate, CentralInvestmentTemplate, CreditCardEntry, Income, ExternalInvestmentBuffer, NetWorthEntry } from '@/types';
 import { formatINR } from '@/utils/currency';
 import * as api from '@/lib/api';
 
@@ -49,6 +51,9 @@ export default function FinanceTracker() {
   const [loadingIncome, setLoadingIncome] = useState(false);
   const [externalBuffers, setExternalBuffers] = useState<ExternalInvestmentBuffer[]>([]);
   const [loadingExternalBuffer, setLoadingExternalBuffer] = useState(false);
+  const [allNetWorthEntries, setAllNetWorthEntries] = useState<NetWorthEntry[]>([]);
+  const [showNetWorthForm, setShowNetWorthForm] = useState(false);
+  const [loadingNetWorth, setLoadingNetWorth] = useState(false);
   const [toast, setToast] = useState<{
     message: string;
     type: 'success' | 'info' | 'warning';
@@ -310,6 +315,15 @@ export default function FinanceTracker() {
           createdAt: new Date(inv.created_at as string)
         }));
         setAllInvestments(mappedAllInvestments);
+
+        // Load all net worth entries for the chart (full history, not just current year)
+        const allNetWorthData = await api.fetchNetWorth();
+        const mappedAllNetWorth = allNetWorthData.map((entry: Record<string, unknown>) => ({
+          ...entry,
+          month: new Date((entry.month as string) + '-01'),
+          createdAt: new Date(entry.created_at as string)
+        }));
+        setAllNetWorthEntries(mappedAllNetWorth);
 
         // Load global note (persists across all months)
         const note = await api.fetchNote();
@@ -1079,6 +1093,36 @@ export default function FinanceTracker() {
     }
   };
 
+  // Net Worth handlers
+  const handleSaveNetWorth = async (amount: number) => {
+    try {
+      setLoadingNetWorth(true);
+      const monthKey = api.formatMonthForAPI(currentMonth);
+
+      const savedEntry = await api.saveNetWorth({ amount, month: monthKey });
+
+      const mappedEntry = {
+        ...savedEntry,
+        month: new Date(savedEntry.month + '-01'),
+        createdAt: new Date(savedEntry.created_at)
+      };
+
+      setAllNetWorthEntries(prev => {
+        const withoutCurrent = prev.filter(entry =>
+          entry.month.getMonth() !== currentMonth.getMonth() ||
+          entry.month.getFullYear() !== currentMonth.getFullYear()
+        );
+        return [...withoutCurrent, mappedEntry];
+      });
+      showToast('Net worth saved successfully', 'success');
+    } catch (error) {
+      console.error('Error saving net worth:', error);
+      alert('Failed to save net worth. Please try again.');
+    } finally {
+      setLoadingNetWorth(false);
+    }
+  };
+
   // Credit Card Title handler
   const handleCreditCardTitleChange = async (newTitle: string) => {
     try {
@@ -1120,6 +1164,11 @@ export default function FinanceTracker() {
     .filter(inv => inv.isCompleted)
     .reduce((sum, inv) => sum + inv.amount, 0);
   const remainingInvestments = totalInvestments - completedInvestments;
+
+  const currentMonthNetWorth = allNetWorthEntries.find(entry =>
+    entry.month.getMonth() === currentMonth.getMonth() &&
+    entry.month.getFullYear() === currentMonth.getFullYear()
+  );
 
   // Calculate chart data from database
   const calculateChartData = () => {
@@ -1766,6 +1815,17 @@ export default function FinanceTracker() {
                 color="#10b981"
                 type="expenses"
               />
+
+              {/* Net Worth Tracker */}
+              <button
+                onClick={() => setShowNetWorthForm(true)}
+                disabled={loadingNetWorth}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 sm:py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors mt-6 text-sm sm:text-base disabled:opacity-50"
+              >
+                <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+                {currentMonthNetWorth ? `Update Net Worth for ${formatMonth(currentMonth)}` : `Add Net Worth for ${formatMonth(currentMonth)}`}
+              </button>
+              <NetWorthChart entries={allNetWorthEntries} />
             </div>
           </div>
 
@@ -1910,6 +1970,14 @@ export default function FinanceTracker() {
             }
             editingInvestment={editingInvestment || undefined}
             currentMonth={currentMonth}
+          />
+
+          <NetWorthForm
+            isOpen={showNetWorthForm}
+            onClose={() => setShowNetWorthForm(false)}
+            onSubmit={handleSaveNetWorth}
+            currentMonth={currentMonth}
+            existingAmount={currentMonthNetWorth?.amount}
           />
 
           {/* Toast Notification */}

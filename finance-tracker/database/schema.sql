@@ -10,6 +10,7 @@ DROP TABLE IF EXISTS external_investment_buffer CASCADE;
 DROP TABLE IF EXISTS income CASCADE;
 DROP TABLE IF EXISTS credit_card_entries CASCADE;
 DROP TABLE IF EXISTS notes CASCADE;
+DROP TABLE IF EXISTS net_worth_entries CASCADE;
 DROP TABLE IF EXISTS investments CASCADE;
 DROP TABLE IF EXISTS central_investment_templates CASCADE;
 DROP TABLE IF EXISTS expenses CASCADE;
@@ -81,6 +82,17 @@ CREATE TABLE IF NOT EXISTS investments (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Net Worth Entries Table
+CREATE TABLE IF NOT EXISTS net_worth_entries (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    amount DECIMAL(14,2) NOT NULL,
+    month VARCHAR(7) NOT NULL, -- Format: YYYY-MM
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(user_id, month) -- One net worth entry per user per month
+);
+
 -- Notes Table
 CREATE TABLE IF NOT EXISTS notes (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -140,6 +152,8 @@ CREATE INDEX IF NOT EXISTS idx_investments_category ON investments(category);
 CREATE INDEX IF NOT EXISTS idx_investments_source_type ON investments(source_type);
 CREATE INDEX IF NOT EXISTS idx_notes_user_id ON notes(user_id);
 CREATE INDEX IF NOT EXISTS idx_notes_month ON notes(month);
+CREATE INDEX IF NOT EXISTS idx_net_worth_entries_user_id ON net_worth_entries(user_id);
+CREATE INDEX IF NOT EXISTS idx_net_worth_entries_month ON net_worth_entries(month);
 CREATE INDEX IF NOT EXISTS idx_credit_card_entries_user_id ON credit_card_entries(user_id);
 CREATE INDEX IF NOT EXISTS idx_credit_card_entries_month ON credit_card_entries(month);
 CREATE INDEX IF NOT EXISTS idx_income_user_id ON income(user_id);
@@ -170,6 +184,10 @@ CREATE TRIGGER update_central_investment_templates_updated_at
 
 CREATE TRIGGER update_users_updated_at
     BEFORE UPDATE ON users
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_net_worth_entries_updated_at
+    BEFORE UPDATE ON net_worth_entries
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- RLS (Row Level Security) - Enable for multi-user data isolation
