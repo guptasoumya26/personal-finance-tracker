@@ -31,9 +31,10 @@ interface TrendChartProps {
   labels: string[];
   color: string;
   type: 'expenses' | 'investments';
+  year: number;
 }
 
-export default function TrendChart({ data, labels, color, type }: TrendChartProps) {
+export default function TrendChart({ data, labels, color, type, year }: TrendChartProps) {
   const chartData = {
     labels,
     datasets: [
@@ -129,7 +130,7 @@ export default function TrendChart({ data, labels, color, type }: TrendChartProp
   return (
     <div className="mt-6">
       <h3 className="font-medium mb-3">
-        {type === 'expenses' ? 'Expense' : 'Investment'} Trend - 2025
+        {type === 'expenses' ? 'Expense' : 'Investment'} Trend - {year}
       </h3>
       <div className="bg-gray-700 rounded-lg p-4 h-48">
         <Line data={chartData} options={options} />

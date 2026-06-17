@@ -1213,10 +1213,10 @@ export default function FinanceTracker() {
       }
     });
 
-    return { expenseChartData, investmentChartData, selfInvestmentChartData, monthLabels };
+    return { expenseChartData, investmentChartData, selfInvestmentChartData, monthLabels, currentYear };
   };
 
-  const { expenseChartData, investmentChartData, selfInvestmentChartData, monthLabels } = calculateChartData();
+  const { expenseChartData, investmentChartData, selfInvestmentChartData, monthLabels, currentYear } = calculateChartData();
 
   if (loading) {
     return (
@@ -1814,6 +1814,7 @@ export default function FinanceTracker() {
                 labels={monthLabels}
                 color="#10b981"
                 type="expenses"
+                year={currentYear}
               />
 
               {/* Net Worth Tracker */}
@@ -1901,6 +1902,7 @@ export default function FinanceTracker() {
                 labels={monthLabels}
                 color="#3b82f6"
                 type="investments"
+                year={currentYear}
               />
 
               {/* Self Investment Trend Chart */}

@@ -119,12 +119,6 @@ export default function NetWorthChart({ entries }: NetWorthChartProps) {
     },
   };
 
-  const stats = {
-    lowest: data.length > 0 ? Math.min(...data) : 0,
-    highest: data.length > 0 ? Math.max(...data) : 0,
-    latest: data.length > 0 ? data[data.length - 1] : 0,
-  };
-
   return (
     <div className="mt-6">
       <div className="flex items-center justify-between mb-3">
@@ -152,16 +146,9 @@ export default function NetWorthChart({ entries }: NetWorthChartProps) {
       </div>
 
       {visible.length > 0 ? (
-        <>
-          <div className="bg-gray-700 rounded-lg p-4 h-48">
-            <Bar data={chartData} options={options} />
-          </div>
-          <div className="flex justify-between text-sm text-gray-400 mt-2">
-            <span>Lowest: {formatINR(stats.lowest)}</span>
-            <span>Highest: {formatINR(stats.highest)}</span>
-            <span>Latest: {formatINR(stats.latest)}</span>
-          </div>
-        </>
+        <div className="bg-gray-700 rounded-lg p-4 h-48">
+          <Bar data={chartData} options={options} />
+        </div>
       ) : (
         <div className="bg-gray-700 rounded-lg p-4 text-center text-gray-400 text-sm">
           No net worth entries yet. Add your first one above.
