@@ -41,6 +41,49 @@ export function formatINRWithDecimals(amount: number, showDecimals?: boolean): s
 }
 
 /**
+ * Converts a number to words using the Indian numbering system
+ * (crore / lakh / thousand). e.g. 600000 -> "Six Lakh",
+ * 13100000 -> "One Crore Thirty One Lakh"
+ * @param amount - The amount to convert (sign and paise are ignored)
+ * @returns The amount written in words
+ */
+export function numberToIndianWords(amount: number): string {
+  let num = Math.round(Math.abs(amount));
+  if (num === 0) return 'Zero';
+
+  const ones = [
+    '', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine',
+    'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen',
+    'Seventeen', 'Eighteen', 'Nineteen',
+  ];
+  const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+  const twoDigit = (n: number): string =>
+    n < 20 ? ones[n] : `${tens[Math.floor(n / 10)]}${n % 10 ? ' ' + ones[n % 10] : ''}`;
+
+  const threeDigit = (n: number): string => {
+    const h = Math.floor(n / 100);
+    const r = n % 100;
+    return `${h ? ones[h] + ' Hundred' : ''}${h && r ? ' ' : ''}${r ? twoDigit(r) : ''}`;
+  };
+
+  const crore = Math.floor(num / 10000000);
+  num %= 10000000;
+  const lakh = Math.floor(num / 100000);
+  num %= 100000;
+  const thousand = Math.floor(num / 1000);
+  const rest = num % 1000;
+
+  const parts: string[] = [];
+  if (crore) parts.push(`${threeDigit(crore)} Crore`);
+  if (lakh) parts.push(`${twoDigit(lakh)} Lakh`);
+  if (thousand) parts.push(`${twoDigit(thousand)} Thousand`);
+  if (rest) parts.push(threeDigit(rest));
+
+  return parts.join(' ');
+}
+
+/**
  * Parses an INR formatted string back to a number
  * @param inrString - The INR formatted string
  * @returns The parsed number
