@@ -1669,16 +1669,6 @@ export default function FinanceTracker() {
                 )}
               </div>
 
-              {/* Income & Expense Ledger */}
-              <div className="mb-6">
-                <IncomeExpenseTable
-                  incomes={incomes}
-                  expenses={currentMonthExpenses}
-                  monthLabel={formatMonth(currentMonth)}
-                  onToggleExpenseDone={handleToggleExpenseCompletion}
-                />
-              </div>
-
               {/* Expense Trend Chart */}
               <TrendChart
                 data={expenseChartData}
@@ -1785,6 +1775,16 @@ export default function FinanceTracker() {
               />
             </div>
           </div>
+        </div>
+
+        {/* Income & Expense Ledger - full width, under the Expenses/Investments lists */}
+        <div className="mt-6 sm:mt-8">
+          <IncomeExpenseTable
+            incomes={incomes}
+            expenses={currentMonthExpenses}
+            investments={currentMonthInvestments}
+            monthLabel={formatMonth(currentMonth)}
+          />
         </div>
 
         {/* Notes Section */}

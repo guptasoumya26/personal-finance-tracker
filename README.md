@@ -11,7 +11,7 @@ A personal finance tracker for tracking **income, expenses, investments and net 
 ### 📅 Monthly view
 - **Month navigation** with a "Go to current month" shortcut.
 - **Income tracker** — add/delete income sources per month, plus an **External Investment Buffer** (e.g. savings carried in from outside).
-- **Income & Expense Ledger** — a 4-column table (income entry | amount | expense entry | amount) with the month's totals at the foot of each amount column, a tick-to-complete checkbox in front of every expense, and a live **Remaining Income** row that recalculates the moment you tick or untick an expense.
+- **Income & Expense Ledger** — a full-width 6-column table (income entry | amount | expense entry | amount | investment entry | amount) with the month's totals at the foot of each amount column. Done entries show a read-only green tick and strike through; marking happens in the lists above, so nothing in the ledger is clickable. The live **Remaining Income** row recalculates whenever a Done flag changes.
 - **Expenses list** — drag to reorder, mark **Done** / **Undo**, `Template` badge on rows created from the master template, and a Total / Remaining summary for the month.
 - **Investments list** — grouped into four sections (**Self**, **Combined**, **One Time**, **Other**). Drag within a section to reorder, or drag across sections to re-classify an investment.
 - **Investment type distribution** pie chart for the selected month.
@@ -232,10 +232,10 @@ CREATE TABLE IF NOT EXISTS health_checks (
 | Total Investment Buffer | Investment Buffer + External Investment Buffer | Income card |
 | Expenses – Total | sum of the month's expenses | Expenses card |
 | Expenses – Remaining | total expenses − expenses marked **Done** | Expenses card |
-| **Remaining Income** | month's **total income** − expenses marked **Done** | Income & Expense Ledger |
+| **Remaining Income** | month's **total income** − expenses marked **Done** − investments marked **Done** | Income & Expense Ledger |
 | Net Worth change | any month's net worth − another month's, with % and words | Net Worth comparator |
 
-Note that *Investment Buffer* (income − **all** expenses) and *Remaining Income* (income − **completed** expenses) answer different questions on purpose: the first is what is left after everything is accounted for, the second is what is left after the expenses you have actually settled.
+Note that *Investment Buffer* (income − **all** expenses) and *Remaining Income* (income − **settled** expenses and investments) answer different questions on purpose: the first is what is left after everything is accounted for, the second is what is left after the outgoings you have actually settled.
 
 ---
 
@@ -246,8 +246,8 @@ Note that *Investment Buffer* (income − **all** expenses) and *Remaining Incom
 3. **Open the month** you want. Use the arrows to move between months; "Go to current month" jumps back.
 4. **Fill from template** with *Fill with Fixed Expenses* / *Fill with Recurring Investments*. A toast reports how many rows were added and how many were skipped as duplicates.
 5. **Add ad-hoc items** with *Add Expense* / *Add Investment*, or income and external buffer entries in the Income card.
-6. **Record income** for the month — the Income card shows the buffers, and the Income & Expense Ledger pairs income with expenses side by side.
-7. **Work the ledger** — tick an expense to mark it Done (click again to undo; the row strikes through and persists). **Remaining Income** refreshes automatically.
+6. **Record income** for the month — the Income card shows the buffers, and the full-width Income & Expense Ledger at the bottom pairs income with expenses and investments side by side.
+7. **Work the ledger** — mark entries **Done** in the Expenses or Investments list above; the ledger strikes them through with a green tick, and **Remaining Income** refreshes automatically.
 8. **Reorder** by dragging the grip handle in the expenses list; drag investments into another section to change their type.
 9. **Log net worth** with *Add/Update Net Worth* — one value per month, then page through history and compare months.
 10. **Notes** are global: edit the box and press *Save Notes*.
