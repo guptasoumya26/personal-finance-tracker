@@ -56,14 +56,23 @@ export class AuthService {
   }
 
   static async getUserByUsername(username: string): Promise<User | null> {
+    // Case-insensitive (and whitespace-tolerant) lookup so a login does not depend on how
+    // the username was typed ("Soumyansh" vs "soumyansh" vs " soumyansh ").
+    // ilike treats % and _ as wildcards, so every returned row is re-checked for a real
+    // case-insensitive equality before it is accepted; that also means a wildcard pattern
+    // can never match an account it does not name exactly.
+    const wanted = username.trim().toLowerCase();
+    if (!wanted) return null;
+
     const { data, error } = await supabaseAdmin
       .from('users')
       .select('*')
-      .eq('username', username)
-      .single();
+      .ilike('username', username.trim());
 
-    if (error || !data) return null;
-    return data as User;
+    if (error || !data || data.length === 0) return null;
+
+    const match = (data as User[]).find((user) => user.username.trim().toLowerCase() === wanted);
+    return match ?? null;
   }
 
   static async getUserByEmail(email: string): Promise<User | null> {
