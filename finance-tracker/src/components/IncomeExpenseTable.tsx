@@ -48,6 +48,10 @@ export default function IncomeExpenseTable({
     .reduce((sum, investment) => sum + investment.amount, 0);
   const remainingIncome = totalIncome - doneExpensesTotal - doneInvestmentsTotal;
 
+  // Read-only info: what is left if EVERY expense and investment is paid for,
+  // settled or not. Refreshes with any change to income, expenses or investments.
+  const extraSavings = totalIncome - totalExpenses - totalInvestments;
+
   const rowCount = Math.max(incomes.length, expenses.length, investments.length);
   const isEmpty = rowCount === 0;
 
@@ -223,6 +227,33 @@ export default function IncomeExpenseTable({
                     </span>
                   </div>
                 </div>
+              </td>
+            </tr>
+
+            {/* Read-only info: everything paid for -- always shown, never clickable */}
+            <tr>
+              <td colSpan={6} className="pt-2">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-4 rounded-lg border border-emerald-500/30 bg-gradient-to-r from-emerald-900/30 to-teal-900/30 px-3 py-2">
+                  <span className="text-sm font-semibold text-emerald-300">Extra Savings Opportunity</span>
+                  <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 sm:justify-end">
+                    <span className="text-xs text-gray-400">
+                      Total Income − All Expenses ({formatINR(totalExpenses)}) − All Investments (
+                      {formatINR(totalInvestments)})
+                    </span>
+                    <span
+                      className={`text-lg font-bold whitespace-nowrap ${
+                        extraSavings >= 0 ? 'text-emerald-400' : 'text-red-400'
+                      }`}
+                    >
+                      {formatINR(extraSavings)}
+                    </span>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 mt-1 sm:text-right">
+                  {extraSavings >= 0
+                    ? 'What is left if every expense and investment for the month is paid for.'
+                    : 'Short by this much if every expense and investment for the month is paid for.'}
+                </p>
               </td>
             </tr>
           </tfoot>

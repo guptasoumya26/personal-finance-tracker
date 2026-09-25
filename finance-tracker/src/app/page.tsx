@@ -10,9 +10,6 @@ import CentralTemplateManager from '@/components/CentralTemplateManager';
 import CentralInvestmentTemplateManager from '@/components/CentralInvestmentTemplateManager';
 import ExpenseForm from '@/components/ExpenseForm';
 import InvestmentForm from '@/components/InvestmentForm';
-import TrendChart from '@/components/TrendChart';
-import InvestmentPieChart from '@/components/InvestmentPieChart';
-import SelfInvestmentTrendChart from '@/components/SelfInvestmentTrendChart';
 import IncomeTracker from '@/components/IncomeTracker';
 import IncomeExpenseTable from '@/components/IncomeExpenseTable';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -33,11 +30,9 @@ export default function FinanceTracker() {
   const [loadingExpenses, setLoadingExpenses] = useState(false);
   const [loadingInvestments, setLoadingInvestments] = useState(false);
   const [monthlyExpenses, setMonthlyExpenses] = useState<Expense[]>([]);
-  const [allExpenses, setAllExpenses] = useState<Expense[]>([]);
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [monthlyInvestments, setMonthlyInvestments] = useState<Investment[]>([]);
-  const [allInvestments, setAllInvestments] = useState<Investment[]>([]);
   const [showInvestmentForm, setShowInvestmentForm] = useState(false);
   const [editingInvestment, setEditingInvestment] = useState<Investment | null>(null);
   const [currentNote, setCurrentNote] = useState<string>('');
@@ -159,9 +154,6 @@ export default function FinanceTracker() {
       setMonthlyInvestments(prev =>
         prev.map(inv => inv.id === activeId ? { ...inv, investmentType: targetSection } : inv)
       );
-      setAllInvestments(prev =>
-        prev.map(inv => inv.id === activeId ? { ...inv, investmentType: targetSection } : inv)
-      );
 
       // Update backend
       try {
@@ -175,9 +167,6 @@ export default function FinanceTracker() {
         showToast('Failed to move investment', 'warning');
         // Revert
         setMonthlyInvestments(prev =>
-          prev.map(inv => inv.id === activeId ? { ...inv, investmentType: activeSection } : inv)
-        );
-        setAllInvestments(prev =>
           prev.map(inv => inv.id === activeId ? { ...inv, investmentType: activeSection } : inv)
         );
       }
@@ -289,28 +278,6 @@ export default function FinanceTracker() {
             updatedAt: new Date(investmentTemplate.updated_at)
           });
         }
-
-        // Load all expenses and investments for the chart data
-        const allExpensesData = await api.fetchExpenses();
-        const mappedAllExpenses = allExpensesData.map((exp: Record<string, unknown>) => ({
-          ...exp,
-          sourceType: (exp.source_type as string) || 'manual', // Default to manual if not set
-          isCompleted: (exp.is_completed as boolean) ?? false,
-          month: new Date((exp.month as string) + '-01'),
-          createdAt: new Date(exp.created_at as string)
-        }));
-        setAllExpenses(mappedAllExpenses);
-
-        const allInvestmentsData = await api.fetchInvestments();
-        const mappedAllInvestments = allInvestmentsData.map((inv: Record<string, unknown>) => ({
-          ...inv,
-          investmentType: (inv.investment_type as string) || 'Self',
-          sourceType: (inv.source_type as string) || 'manual', // Default to manual if not set
-          isCompleted: (inv.is_completed as boolean) ?? false,
-          month: new Date((inv.month as string) + '-01'),
-          createdAt: new Date(inv.created_at as string)
-        }));
-        setAllInvestments(mappedAllInvestments);
 
         // Load all net worth entries for the chart (full history, not just current year)
         const allNetWorthData = await api.fetchNetWorth();
@@ -565,14 +532,6 @@ export default function FinanceTracker() {
         ),
         ...newExpenses
       ]);
-      setAllExpenses(prev => [
-        ...prev.filter(exp =>
-          exp.sourceType !== 'template' ||
-          exp.month.getMonth() !== currentMonth.getMonth() ||
-          exp.month.getFullYear() !== currentMonth.getFullYear()
-        ),
-        ...newExpenses
-      ]);
 
     } catch (error) {
       console.error('Error filling expenses:', error);
@@ -666,14 +625,6 @@ export default function FinanceTracker() {
         ),
         ...newInvestments
       ]);
-      setAllInvestments(prev => [
-        ...prev.filter(inv =>
-          inv.sourceType !== 'template' ||
-          inv.month.getMonth() !== currentMonth.getMonth() ||
-          inv.month.getFullYear() !== currentMonth.getFullYear()
-        ),
-        ...newInvestments
-      ]);
 
     } catch (error) {
       console.error('Error filling investments:', error);
@@ -715,7 +666,6 @@ export default function FinanceTracker() {
       };
 
       setMonthlyExpenses(prev => [...prev, newExpense]);
-      setAllExpenses(prev => [...prev, newExpense]);
     } catch (error) {
       console.error('Error adding expense:', error);
       alert('Failed to add expense. Please try again.');
@@ -745,9 +695,6 @@ export default function FinanceTracker() {
       setMonthlyExpenses(prev =>
         prev.map(exp => exp.id === id ? mappedExpense : exp)
       );
-      setAllExpenses(prev =>
-        prev.map(exp => exp.id === id ? mappedExpense : exp)
-      );
     } catch (error) {
       console.error('Error updating expense:', error);
       alert('Failed to update expense. Please try again.');
@@ -758,7 +705,6 @@ export default function FinanceTracker() {
     try {
       await api.deleteExpense(id);
       setMonthlyExpenses(prev => prev.filter(exp => exp.id !== id));
-      setAllExpenses(prev => prev.filter(exp => exp.id !== id));
     } catch (error) {
       console.error('Error deleting expense:', error);
       alert('Failed to delete expense. Please try again.');
@@ -778,9 +724,6 @@ export default function FinanceTracker() {
       };
 
       setMonthlyExpenses(prev =>
-        prev.map(exp => exp.id === id ? mappedExpense : exp)
-      );
-      setAllExpenses(prev =>
         prev.map(exp => exp.id === id ? mappedExpense : exp)
       );
     } catch (error) {
@@ -822,7 +765,6 @@ export default function FinanceTracker() {
       };
 
       setMonthlyInvestments(prev => [...prev, newInvestment]);
-      setAllInvestments(prev => [...prev, newInvestment]);
     } catch (error) {
       console.error('Error adding investment:', error);
       alert('Failed to add investment. Please try again.');
@@ -854,9 +796,6 @@ export default function FinanceTracker() {
       setMonthlyInvestments(prev =>
         prev.map(inv => inv.id === id ? mappedInvestment : inv)
       );
-      setAllInvestments(prev =>
-        prev.map(inv => inv.id === id ? mappedInvestment : inv)
-      );
     } catch (error) {
       console.error('Error updating investment:', error);
       alert('Failed to update investment. Please try again.');
@@ -867,7 +806,6 @@ export default function FinanceTracker() {
     try {
       await api.deleteInvestment(id);
       setMonthlyInvestments(prev => prev.filter(inv => inv.id !== id));
-      setAllInvestments(prev => prev.filter(inv => inv.id !== id));
     } catch (error) {
       console.error('Error deleting investment:', error);
       alert('Failed to delete investment. Please try again.');
@@ -888,9 +826,6 @@ export default function FinanceTracker() {
       };
 
       setMonthlyInvestments(prev =>
-        prev.map(inv => inv.id === id ? mappedInvestment : inv)
-      );
-      setAllInvestments(prev =>
         prev.map(inv => inv.id === id ? mappedInvestment : inv)
       );
     } catch (error) {
@@ -1052,54 +987,6 @@ export default function FinanceTracker() {
     entry.month.getMonth() === currentMonth.getMonth() &&
     entry.month.getFullYear() === currentMonth.getFullYear()
   );
-
-  // Calculate chart data from database
-  const calculateChartData = () => {
-    const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const expenseChartData = new Array(12).fill(0);
-    const investmentChartData = new Array(12).fill(0);
-    const selfInvestmentChartData = new Array(12).fill(0);
-
-    // Only include data from current year to avoid phantom entries from other years
-    const currentYear = new Date().getFullYear();
-
-    // Calculate expenses by month - only from current year
-    allExpenses.forEach(expense => {
-      // Validate the date and year
-      if (expense.month instanceof Date &&
-          expense.month.getFullYear() === currentYear &&
-          !isNaN(expense.month.getTime()) &&
-          expense.amount > 0) {
-        const month = expense.month.getMonth(); // 0-11
-        if (month >= 0 && month <= 11) {
-          expenseChartData[month] += expense.amount;
-        }
-      }
-    });
-
-    // Calculate investments by month - only from current year
-    allInvestments.forEach(investment => {
-      // Validate the date and year
-      if (investment.month instanceof Date &&
-          investment.month.getFullYear() === currentYear &&
-          !isNaN(investment.month.getTime()) &&
-          investment.amount > 0) {
-        const month = investment.month.getMonth(); // 0-11
-        if (month >= 0 && month <= 11) {
-          investmentChartData[month] += investment.amount;
-
-          // Calculate self investments separately
-          if (investment.investmentType === 'Self') {
-            selfInvestmentChartData[month] += investment.amount;
-          }
-        }
-      }
-    });
-
-    return { expenseChartData, investmentChartData, selfInvestmentChartData, monthLabels, currentYear };
-  };
-
-  const { expenseChartData, investmentChartData, selfInvestmentChartData, monthLabels, currentYear } = calculateChartData();
 
   if (loading) {
     return (
@@ -1669,15 +1556,6 @@ export default function FinanceTracker() {
                 )}
               </div>
 
-              {/* Expense Trend Chart */}
-              <TrendChart
-                data={expenseChartData}
-                labels={monthLabels}
-                color="#10b981"
-                type="expenses"
-                year={currentYear}
-              />
-
               {/* Net Worth Tracker */}
               <button
                 onClick={() => setShowNetWorthForm(true)}
@@ -1750,29 +1628,6 @@ export default function FinanceTracker() {
                   </DndContext>
                 )}
               </div>
-
-              {/* Investment Type Distribution Pie Chart */}
-              <InvestmentPieChart
-                investments={currentMonthInvestments}
-                monthName={formatMonth(currentMonth)}
-              />
-
-              {/* Investment Trend Chart */}
-              <TrendChart
-                data={investmentChartData}
-                labels={monthLabels}
-                color="#3b82f6"
-                type="investments"
-                year={currentYear}
-              />
-
-              {/* Self Investment Trend Chart */}
-              <SelfInvestmentTrendChart
-                data={selfInvestmentChartData}
-                labels={monthLabels}
-                color="#10b981"
-                title="Self Investments"
-              />
             </div>
           </div>
         </div>

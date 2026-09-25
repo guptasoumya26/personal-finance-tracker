@@ -1,6 +1,6 @@
 # 💰 Finance Tracker
 
-A personal finance tracker for tracking **income, expenses, investments and net worth month by month**, with recurring templates, drag-and-drop ordering, trend analytics and multi-user login. Built with Next.js + Supabase, localized for India (₹ / lakh–crore formatting).
+A personal finance tracker for tracking **income, expenses, investments and net worth month by month**, with recurring templates, drag-and-drop ordering and multi-user login. Built with Next.js + Supabase, localized for India (₹ / lakh–crore formatting).
 
 > **Where things live:** the Next.js app is in [`finance-tracker/`](./finance-tracker). The repository root only holds the README, CI workflow and editor/agent config. Run every command below from `finance-tracker/`.
 
@@ -11,11 +11,9 @@ A personal finance tracker for tracking **income, expenses, investments and net 
 ### 📅 Monthly view
 - **Month navigation** with a "Go to current month" shortcut.
 - **Income tracker** — add/delete income sources per month, plus an **External Investment Buffer** (e.g. savings carried in from outside).
-- **Income & Expense Ledger** — a full-width 6-column table (income entry | amount | expense entry | amount | investment entry | amount) with the month's totals at the foot of each amount column. Done entries show a read-only green tick and strike through; marking happens in the lists above, so nothing in the ledger is clickable. The live **Remaining Income** row recalculates whenever a Done flag changes.
+- **Income & Expense Ledger** — a full-width 6-column table (income entry | amount | expense entry | amount | investment entry | amount) with the month's totals at the foot of each amount column. Done entries show a read-only green tick and strike through; marking happens in the lists above, so nothing in the ledger is clickable. Two read-only figures sit under the table: **Remaining Income** (income − settled expenses and investments) and **Extra Savings Opportunity** (income − everything), both refreshing whenever a Done flag or an entry changes.
 - **Expenses list** — drag to reorder, mark **Done** / **Undo**, `Template` badge on rows created from the master template, and a Total / Remaining summary for the month.
 - **Investments list** — grouped into four sections (**Self**, **Combined**, **One Time**, **Other**). Drag within a section to reorder, or drag across sections to re-classify an investment.
-- **Investment type distribution** pie chart for the selected month.
-- **Trend charts** (current calendar year unless noted): expenses, all investments, and self investments — each with lowest / highest / average across the months that have data. Only the current year is charted, so older data never skews the line.
 - **Net Worth tracker** — one manually entered total per month, shown as a 6-month paged bar chart with always-on value labels, plus a **comparator** that explains the change between any two months in ₹, words (lakh/crore) and %.
 - **Notes** — a single free-text note per user that persists across all months (manual save; the Save button lights up when there are unsaved changes).
 
@@ -233,6 +231,7 @@ CREATE TABLE IF NOT EXISTS health_checks (
 | Expenses – Total | sum of the month's expenses | Expenses card |
 | Expenses – Remaining | total expenses − expenses marked **Done** | Expenses card |
 | **Remaining Income** | month's **total income** − expenses marked **Done** − investments marked **Done** | Income & Expense Ledger |
+| **Extra Savings Opportunity** | month's **total income** − **all** expenses − **all** investments (settled or not) — read-only, always shown, and negative means the month is over-committed | Income & Expense Ledger |
 | Net Worth change | any month's net worth − another month's, with % and words | Net Worth comparator |
 
 Note that *Investment Buffer* (income − **all** expenses) and *Remaining Income* (income − **settled** expenses and investments) answer different questions on purpose: the first is what is left after everything is accounted for, the second is what is left after the outgoings you have actually settled.
@@ -247,7 +246,7 @@ Note that *Investment Buffer* (income − **all** expenses) and *Remaining Incom
 4. **Fill from template** with *Fill with Fixed Expenses* / *Fill with Recurring Investments*. A toast reports how many rows were added and how many were skipped as duplicates.
 5. **Add ad-hoc items** with *Add Expense* / *Add Investment*, or income and external buffer entries in the Income card.
 6. **Record income** for the month — the Income card shows the buffers, and the full-width Income & Expense Ledger at the bottom pairs income with expenses and investments side by side.
-7. **Work the ledger** — mark entries **Done** in the Expenses or Investments list above; the ledger strikes them through with a green tick, and **Remaining Income** refreshes automatically.
+7. **Work the ledger** — mark entries **Done** in the Expenses or Investments list above; the ledger strikes them through with a green tick, and both read-only figures refresh: **Remaining Income** (after settled items) and **Extra Savings Opportunity** (after everything).
 8. **Reorder** by dragging the grip handle in the expenses list; drag investments into another section to change their type.
 9. **Log net worth** with *Add/Update Net Worth* — one value per month, then page through history and compare months.
 10. **Notes** are global: edit the box and press *Save Notes*.

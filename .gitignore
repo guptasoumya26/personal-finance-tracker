@@ -129,6 +129,9 @@ nul
 /*.jpeg
 /*.gif
 
+# Local screenshots taken inside the app (they contain real balances and entries)
+finance-tracker/Images/
+
 # Root level package files (app is in finance-tracker/)
 /package.json
 /package-lock.json
