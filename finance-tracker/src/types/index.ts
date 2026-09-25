@@ -119,16 +119,6 @@ export interface Note {
   updatedAt: Date;
 }
 
-// Credit Card Entry
-export interface CreditCardEntry {
-  id: string;
-  description: string;
-  amount: number;
-  month: Date;
-  displayOrder?: number;
-  createdAt: Date;
-}
-
 // Income Entry
 export interface Income {
   id: string;

@@ -1,8 +1,19 @@
 name: Keep Supabase Active
 
+# Backup keep-alive pinger for the Supabase free tier (which pauses a project after 7 days
+# without real database activity). The PRIMARY pinger is the Vercel Cron defined in
+# finance-tracker/vercel.json: it runs daily and does not depend on this repository.
+#
+# WARNING: GitHub automatically disables scheduled workflows in a public repository after
+# 60 days without repository activity. When that happens this workflow shows as
+# "disabled_inactivity" and its schedule silently stops firing. Re-enable it from the
+# Actions tab ("Enable workflow") or run `gh workflow enable keep-alive.yml`; any commit
+# resets the 60-day timer. Check the state with:
+#   curl -s https://api.github.com/repos/<owner>/<repo>/actions/workflows
+
 on:
   schedule:
-    # Run every 4 hours
+    # Every 4 hours
     - cron: '0 */4 * * *'
   workflow_dispatch: # Allow manual trigger
 
@@ -10,18 +21,39 @@ jobs:
   ping-health-check:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping health check endpoint
+      - name: Ping keep-alive endpoint
+        env:
+          # Sent as a bearer token when the deployment has CRON_SECRET configured;
+          # ignored by the endpoint when it is empty.
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          echo "Pinging health check endpoint..."
-          response=$(curl -s -o /dev/null -w "%{http_code}" https://personal-finance-tracker-two-pearl.vercel.app/api/cron/keep-alive)
-          echo "Response code: $response"
+          URL="https://personal-finance-tracker-two-pearl.vercel.app/api/cron/keep-alive"
 
-          if [ $response -eq 200 ]; then
-            echo "✅ Health check successful"
-          else
-            echo "❌ Health check failed with code $response"
+          echo "Pinging $URL"
+          code=$(curl -s -o body.txt -w "%{http_code}" -H "Authorization: Bearer $CRON_SECRET" "$URL")
+
+          # A 401 means the endpoint expects CRON_SECRET but ours does not match, so retry
+          # without the header: this workflow must also work on deployments that do not set it.
+          if [ "$code" = "401" ]; then
+            echo "Authenticated ping returned 401 - retrying without the header"
+            code=$(curl -s -o body.txt -w "%{http_code}" "$URL")
+          fi
+
+          echo "HTTP $code"
+          echo "--- response body ---"
+          cat body.txt
+          echo
+
+          if [ "$code" != "200" ]; then
+            echo "Keep-alive ping FAILED with HTTP $code"
             exit 1
           fi
 
-      - name: Log timestamp
-        run: echo "Health check completed at $(date)"
+          # A 200 alone is not proof of database activity. The endpoint must report that it
+          # actually ran its queries, otherwise Supabase's inactivity timer is not reset.
+          if ! grep -q '"database":"connected"' body.txt; then
+            echo "Endpoint answered 200 but did not report a database connection"
+            exit 1
+          fi
+
+          echo "Supabase keep-alive successful"

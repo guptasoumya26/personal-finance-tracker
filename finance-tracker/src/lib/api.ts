@@ -4,7 +4,6 @@ import {
   InvestmentTemplateItem,
   Expense,
   Investment,
-  CreditCardEntry,
   Income,
   ExternalInvestmentBuffer
 } from '@/types';
@@ -244,88 +243,19 @@ export async function fetchNote() {
   return result.data;
 }
 
-export async function saveNote(content: string, credit_card_tracker_title?: string) {
-  const body: { content: string; credit_card_tracker_title?: string } = { content };
-  if (credit_card_tracker_title !== undefined) {
-    body.credit_card_tracker_title = credit_card_tracker_title;
-  }
+export async function saveNote(content: string) {
   const response = await fetch('/api/notes', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ content }),
   });
   if (!response.ok) {
     throw new Error('Failed to save note');
   }
   const result = await response.json();
   return result.data;
-}
-
-// Credit Card Entries API
-export async function fetchCreditCardEntries(month?: string) {
-  const url = month ? `/api/credit-card-entries?month=${month}` : '/api/credit-card-entries';
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error('Failed to fetch credit card entries');
-  }
-  const result = await response.json();
-  return result.data;
-}
-
-export async function createCreditCardEntry(entry: Omit<CreditCardEntry, 'id' | 'createdAt' | 'month'> & { month: Date | string }) {
-  const response = await fetch('/api/credit-card-entries', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(entry),
-  });
-  if (!response.ok) {
-    throw new Error('Failed to create credit card entry');
-  }
-  const result = await response.json();
-  return result.data;
-}
-
-export async function updateCreditCardEntry(id: string, entry: Partial<Omit<CreditCardEntry, 'month'>> & { month?: Date | string }) {
-  const response = await fetch('/api/credit-card-entries', {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ id, ...entry }),
-  });
-  if (!response.ok) {
-    throw new Error('Failed to update credit card entry');
-  }
-  const result = await response.json();
-  return result.data;
-}
-
-export async function deleteCreditCardEntry(id: string) {
-  const response = await fetch(`/api/credit-card-entries?id=${id}`, {
-    method: 'DELETE',
-  });
-  if (!response.ok) {
-    throw new Error('Failed to delete credit card entry');
-  }
-  return true;
-}
-
-export async function reorderCreditCardEntries(entries: Array<{ id: string; displayOrder: number }>) {
-  const response = await fetch('/api/credit-card-entries/reorder', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ entries }),
-  });
-  if (!response.ok) {
-    throw new Error('Failed to reorder credit card entries');
-  }
-  return true;
 }
 
 // Income API

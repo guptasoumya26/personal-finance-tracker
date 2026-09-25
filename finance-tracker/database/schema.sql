@@ -8,7 +8,6 @@
 -- Drop all existing tables and data
 DROP TABLE IF EXISTS external_investment_buffer CASCADE;
 DROP TABLE IF EXISTS income CASCADE;
-DROP TABLE IF EXISTS credit_card_entries CASCADE;
 DROP TABLE IF EXISTS notes CASCADE;
 DROP TABLE IF EXISTS net_worth_entries CASCADE;
 DROP TABLE IF EXISTS investments CASCADE;
@@ -104,17 +103,6 @@ CREATE TABLE IF NOT EXISTS notes (
     UNIQUE(user_id, month) -- One note per user per month
 );
 
--- Credit Card Entries Table
-CREATE TABLE IF NOT EXISTS credit_card_entries (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    description VARCHAR(255) NOT NULL,
-    amount DECIMAL(10,2) NOT NULL,
-    month VARCHAR(7) NOT NULL, -- Format: YYYY-MM
-    display_order INTEGER,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
 -- Income Table
 CREATE TABLE IF NOT EXISTS income (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -154,8 +142,6 @@ CREATE INDEX IF NOT EXISTS idx_notes_user_id ON notes(user_id);
 CREATE INDEX IF NOT EXISTS idx_notes_month ON notes(month);
 CREATE INDEX IF NOT EXISTS idx_net_worth_entries_user_id ON net_worth_entries(user_id);
 CREATE INDEX IF NOT EXISTS idx_net_worth_entries_month ON net_worth_entries(month);
-CREATE INDEX IF NOT EXISTS idx_credit_card_entries_user_id ON credit_card_entries(user_id);
-CREATE INDEX IF NOT EXISTS idx_credit_card_entries_month ON credit_card_entries(month);
 CREATE INDEX IF NOT EXISTS idx_income_user_id ON income(user_id);
 CREATE INDEX IF NOT EXISTS idx_income_month ON income(month);
 CREATE INDEX IF NOT EXISTS idx_external_investment_buffer_user_id ON external_investment_buffer(user_id);

@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
   try {
     const user = await requireAuth(request);
     const body = await request.json();
-    const { content, credit_card_tracker_title } = body;
+    const { content } = body;
 
     // Check if note already exists for this user (global note, no month)
     const { data: existing } = await supabaseAdmin
@@ -46,10 +46,7 @@ export async function POST(request: NextRequest) {
     let result;
     if (existing) {
       // Update existing note
-      const updateData: { content: string; updated_at: string; credit_card_tracker_title?: string } = { content, updated_at: new Date().toISOString() };
-      if (credit_card_tracker_title !== undefined) {
-        updateData.credit_card_tracker_title = credit_card_tracker_title;
-      }
+      const updateData = { content, updated_at: new Date().toISOString() };
       result = await supabaseAdmin
         .from('notes')
         .update(updateData)
@@ -59,10 +56,7 @@ export async function POST(request: NextRequest) {
         .single();
     } else {
       // Create new note
-      const insertData: { user_id: string; content: string; credit_card_tracker_title?: string } = { user_id: user.id, content };
-      if (credit_card_tracker_title !== undefined) {
-        insertData.credit_card_tracker_title = credit_card_tracker_title;
-      }
+      const insertData = { user_id: user.id, content };
       result = await supabaseAdmin
         .from('notes')
         .insert(insertData)

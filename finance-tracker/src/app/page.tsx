@@ -11,16 +11,15 @@ import CentralInvestmentTemplateManager from '@/components/CentralInvestmentTemp
 import ExpenseForm from '@/components/ExpenseForm';
 import InvestmentForm from '@/components/InvestmentForm';
 import TrendChart from '@/components/TrendChart';
-import ExpensePieChart from '@/components/ExpensePieChart';
 import InvestmentPieChart from '@/components/InvestmentPieChart';
 import SelfInvestmentTrendChart from '@/components/SelfInvestmentTrendChart';
-import CreditCardTracker from '@/components/CreditCardTracker';
 import IncomeTracker from '@/components/IncomeTracker';
+import IncomeExpenseTable from '@/components/IncomeExpenseTable';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Toast from '@/components/Toast';
 import NetWorthForm from '@/components/NetWorthForm';
 import NetWorthChart from '@/components/NetWorthChart';
-import { Expense, Investment, InvestmentType, CentralTemplate, CentralInvestmentTemplate, CreditCardEntry, Income, ExternalInvestmentBuffer, NetWorthEntry } from '@/types';
+import { Expense, Investment, InvestmentType, CentralTemplate, CentralInvestmentTemplate, Income, ExternalInvestmentBuffer, NetWorthEntry } from '@/types';
 import { formatINR } from '@/utils/currency';
 import * as api from '@/lib/api';
 
@@ -42,11 +41,8 @@ export default function FinanceTracker() {
   const [showInvestmentForm, setShowInvestmentForm] = useState(false);
   const [editingInvestment, setEditingInvestment] = useState<Investment | null>(null);
   const [currentNote, setCurrentNote] = useState<string>('');
-  const [creditCardTitle, setCreditCardTitle] = useState<string>('Credit Card Bill Tracker');
   const [hasUnsavedNotes, setHasUnsavedNotes] = useState(false);
   const [savingNotes, setSavingNotes] = useState(false);
-  const [creditCardEntries, setCreditCardEntries] = useState<CreditCardEntry[]>([]);
-  const [loadingCreditCard, setLoadingCreditCard] = useState(false);
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [loadingIncome, setLoadingIncome] = useState(false);
   const [externalBuffers, setExternalBuffers] = useState<ExternalInvestmentBuffer[]>([]);
@@ -328,7 +324,6 @@ export default function FinanceTracker() {
         // Load global note (persists across all months)
         const note = await api.fetchNote();
         setCurrentNote(note?.content || '');
-        setCreditCardTitle(note?.credit_card_tracker_title || 'Credit Card Bill Tracker');
 
       } catch (error) {
         console.error('Error loading initial data:', error);
@@ -374,17 +369,6 @@ export default function FinanceTracker() {
         }));
         setMonthlyInvestments(mappedInvestments);
 
-        // Load credit card entries for current month
-        setLoadingCreditCard(true);
-        const creditCardData = await api.fetchCreditCardEntries(monthKey);
-        const mappedCreditCard = creditCardData.map((entry: Record<string, unknown>) => ({
-          ...entry,
-          month: new Date((entry.month as string) + '-01'),
-          createdAt: new Date(entry.created_at as string)
-        }));
-        setCreditCardEntries(mappedCreditCard);
-        setLoadingCreditCard(false);
-
         // Load income for current month
         setLoadingIncome(true);
         const incomeData = await api.fetchIncome(monthKey);
@@ -412,7 +396,6 @@ export default function FinanceTracker() {
       } finally {
         setLoadingExpenses(false);
         setLoadingInvestments(false);
-        setLoadingCreditCard(false);
         setLoadingIncome(false);
         setLoadingExternalBuffer(false);
       }
@@ -525,13 +508,17 @@ export default function FinanceTracker() {
         await api.deleteExpense(expense.id);
       }
 
+      // Build a list of remaining expenses excluding the ones we just deleted
+      const deletedIds = new Set(existingTemplateExpenses.map(exp => exp.id));
+      const remainingMonthExpenses = monthlyExpenses.filter(exp => !deletedIds.has(exp.id));
+
       // Create new expenses from template
       const newExpenses: Expense[] = [];
       const skippedItems: string[] = [];
 
       for (const item of centralTemplate.items) {
         // Additional check: Skip if an expense with similar name already exists for this month
-        const existingExpenseWithSimilarName = monthlyExpenses.find(exp =>
+        const existingExpenseWithSimilarName = remainingMonthExpenses.find(exp =>
           areNamesSimilar(exp.name, item.name) &&
           exp.month.getMonth() === currentMonth.getMonth() &&
           exp.month.getFullYear() === currentMonth.getFullYear()
@@ -917,98 +904,6 @@ export default function FinanceTracker() {
     setShowInvestmentForm(true);
   };
 
-  // Credit Card Entry handlers
-  const handleAddCreditCardEntry = async (entry: { description: string; amount: number }) => {
-    try {
-      setLoadingCreditCard(true);
-      const monthKey = api.formatMonthForAPI(currentMonth);
-
-      const createdEntry = await api.createCreditCardEntry({
-        description: entry.description,
-        amount: entry.amount,
-        month: monthKey
-      });
-
-      const mappedEntry = {
-        ...createdEntry,
-        month: new Date(createdEntry.month + '-01'),
-        createdAt: new Date(createdEntry.created_at)
-      };
-
-      setCreditCardEntries(prev => [mappedEntry, ...prev]);
-      showToast('Credit card entry added successfully', 'success');
-    } catch (error) {
-      console.error('Error adding credit card entry:', error);
-      alert('Failed to add credit card entry. Please try again.');
-    } finally {
-      setLoadingCreditCard(false);
-    }
-  };
-
-  const handleUpdateCreditCardEntry = async (id: string, entry: { description: string; amount: number }) => {
-    try {
-      setLoadingCreditCard(true);
-      const updatedEntry = await api.updateCreditCardEntry(id, {
-        description: entry.description,
-        amount: entry.amount
-      });
-
-      const mappedEntry = {
-        ...updatedEntry,
-        month: new Date(updatedEntry.month + '-01'),
-        createdAt: new Date(updatedEntry.created_at)
-      };
-
-      setCreditCardEntries(prev => prev.map(e => e.id === id ? mappedEntry : e));
-      showToast('Credit card entry updated successfully', 'success');
-    } catch (error) {
-      console.error('Error updating credit card entry:', error);
-      alert('Failed to update credit card entry. Please try again.');
-    } finally {
-      setLoadingCreditCard(false);
-    }
-  };
-
-  const handleDeleteCreditCardEntry = async (id: string) => {
-    try {
-      setLoadingCreditCard(true);
-      await api.deleteCreditCardEntry(id);
-      setCreditCardEntries(prev => prev.filter(entry => entry.id !== id));
-      showToast('Credit card entry deleted', 'success');
-    } catch (error) {
-      console.error('Error deleting credit card entry:', error);
-      alert('Failed to delete credit card entry. Please try again.');
-    } finally {
-      setLoadingCreditCard(false);
-    }
-  };
-
-  const handleReorderCreditCardEntries = async (reorderedEntries: CreditCardEntry[]) => {
-    // Optimistically update UI
-    setCreditCardEntries(reorderedEntries);
-
-    try {
-      const entriesWithOrder = reorderedEntries.map((entry, index) => ({
-        id: entry.id,
-        displayOrder: index
-      }));
-
-      await api.reorderCreditCardEntries(entriesWithOrder);
-    } catch (error) {
-      console.error('Error reordering credit card entries:', error);
-      // Revert to original order on error
-      const monthKey = api.formatMonthForAPI(currentMonth);
-      const entries = await api.fetchCreditCardEntries(monthKey);
-      const mappedEntries = entries.map((entry: Record<string, unknown>) => ({
-        ...entry,
-        month: new Date((entry.month as string) + '-01'),
-        createdAt: new Date(entry.created_at as string)
-      }));
-      setCreditCardEntries(mappedEntries);
-      alert('Failed to reorder credit card entries. Please try again.');
-    }
-  };
-
   // Income handlers
   const handleAddIncome = async (income: { source: string; amount: number }) => {
     try {
@@ -1120,18 +1015,6 @@ export default function FinanceTracker() {
       alert('Failed to save net worth. Please try again.');
     } finally {
       setLoadingNetWorth(false);
-    }
-  };
-
-  // Credit Card Title handler
-  const handleCreditCardTitleChange = async (newTitle: string) => {
-    try {
-      await api.saveNote(currentNote, newTitle);
-      setCreditCardTitle(newTitle);
-      showToast('Title saved successfully', 'success');
-    } catch (error) {
-      console.error('Error saving credit card title:', error);
-      alert('Failed to save title. Please try again.');
     }
   };
 
@@ -1786,25 +1669,13 @@ export default function FinanceTracker() {
                 )}
               </div>
 
-              {/* Expense Distribution Pie Chart */}
+              {/* Income & Expense Ledger */}
               <div className="mb-6">
-                <ExpensePieChart
+                <IncomeExpenseTable
+                  incomes={incomes}
                   expenses={currentMonthExpenses}
-                  monthName={formatMonth(currentMonth)}
-                />
-              </div>
-
-              {/* Credit Card Bill Tracker */}
-              <div className="mb-6">
-                <CreditCardTracker
-                  entries={creditCardEntries}
-                  onAddEntry={handleAddCreditCardEntry}
-                  onUpdateEntry={handleUpdateCreditCardEntry}
-                  onDeleteEntry={handleDeleteCreditCardEntry}
-                  onReorderEntries={handleReorderCreditCardEntries}
-                  loading={loadingCreditCard}
-                  title={creditCardTitle}
-                  onTitleChange={handleCreditCardTitleChange}
+                  monthLabel={formatMonth(currentMonth)}
+                  onToggleExpenseDone={handleToggleExpenseCompletion}
                 />
               </div>
 
