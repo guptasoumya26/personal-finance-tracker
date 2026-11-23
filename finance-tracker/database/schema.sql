@@ -55,6 +55,7 @@ CREATE TABLE IF NOT EXISTS expenses (
     month VARCHAR(7) NOT NULL, -- Format: YYYY-MM
     source_type VARCHAR(20) NOT NULL CHECK (source_type IN ('manual', 'template')),
     monthly_template_instance_id UUID,
+    display_order integer DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -78,6 +79,7 @@ CREATE TABLE IF NOT EXISTS investments (
     month VARCHAR(7) NOT NULL, -- Format: YYYY-MM
     source_type VARCHAR(20) NOT NULL DEFAULT 'manual' CHECK (source_type IN ('manual', 'template')),
     monthly_template_instance_id UUID,
+    display_order integer DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

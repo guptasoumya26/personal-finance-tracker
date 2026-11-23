@@ -49,6 +49,7 @@ export async function POST(request: NextRequest) {
         investment_type: investment_type || 'Self',
         month,
         source_type,
+        display_order: body.displayOrder,
         monthly_template_instance_id
       })
       .select()

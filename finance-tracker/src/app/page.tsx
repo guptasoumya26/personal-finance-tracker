@@ -476,8 +476,10 @@ export default function FinanceTracker() {
       }
 
       // Build a list of remaining expenses excluding the ones we just deleted
-      const deletedIds = new Set(existingTemplateExpenses.map(exp => exp.id));
-      const remainingMonthExpenses = monthlyExpenses.filter(exp => !deletedIds.has(exp.id));
+      const remainingMonthExpenses = currentMonthExpenses.filter(entry => entry.sourceType !== 'template');
+      const firstTemplateOrder = remainingMonthExpenses.reduce(
+        (next, entry) => Math.max(next, (entry.displayOrder ?? 0) + 1), 0
+      );
 
       // Create new expenses from template
       const newExpenses: Expense[] = [];
@@ -500,6 +502,7 @@ export default function FinanceTracker() {
           name: item.name,
           amount: item.amount,
           category: item.category,
+          displayOrder: firstTemplateOrder + newExpenses.length,
           month: monthKey,
           sourceType: 'template' as const
         };
@@ -507,6 +510,7 @@ export default function FinanceTracker() {
         const createdExpense = await api.createExpense(expenseData);
         newExpenses.push({
           ...createdExpense,
+          displayOrder: createdExpense.display_order,
           sourceType: createdExpense.source_type || 'template',
           isCompleted: createdExpense.is_completed ?? false,
           month: new Date(createdExpense.month + '-01'),
@@ -563,8 +567,10 @@ export default function FinanceTracker() {
       }
 
       // Build a list of remaining investments excluding the ones we just deleted
-      const deletedIds = new Set(existingTemplateInvestments.map(inv => inv.id));
-      const remainingInvestments = monthlyInvestments.filter(inv => !deletedIds.has(inv.id));
+      const remainingInvestments = currentMonthInvestments.filter(entry => entry.sourceType !== 'template');
+      const firstTemplateOrder = remainingInvestments.reduce(
+        (next, entry) => Math.max(next, (entry.displayOrder ?? 0) + 1), 0
+      );
 
       // Create new investments from template
       const newInvestments: Investment[] = [];
@@ -592,6 +598,7 @@ export default function FinanceTracker() {
           amount: item.amount,
           category: item.category,
           investmentType: item.investmentType || 'Self',
+          displayOrder: firstTemplateOrder + newInvestments.length,
           month: monthKey,
           sourceType: 'template' as const
         };
@@ -599,6 +606,7 @@ export default function FinanceTracker() {
         const createdInvestment = await api.createInvestment(investmentData);
         newInvestments.push({
           ...createdInvestment,
+          displayOrder: createdInvestment.display_order,
           investmentType: createdInvestment.investment_type || 'Self',
           sourceType: createdInvestment.source_type || 'template',
           isCompleted: createdInvestment.is_completed ?? false,

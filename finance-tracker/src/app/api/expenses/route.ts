@@ -48,6 +48,7 @@ export async function POST(request: NextRequest) {
         category,
         month,
         source_type,
+        display_order: body.displayOrder,
         monthly_template_instance_id
       })
       .select()
