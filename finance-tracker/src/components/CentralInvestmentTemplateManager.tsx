@@ -1,5 +1,6 @@
 'use client';
 
+import { ReorderableList, ReorderableRow } from './ReorderableList';
 import { useState } from 'react';
 import { Plus, Edit2, Trash2, Settings, AlertCircle } from 'lucide-react';
 import { CentralInvestmentTemplate, InvestmentTemplateItem, INVESTMENT_CATEGORIES, InvestmentCategory, INVESTMENT_TYPES, InvestmentType } from '@/types';
@@ -141,40 +142,43 @@ export default function CentralInvestmentTemplateManager({
           {centralInvestmentTemplate.items.length > 0 ? (
             <div className="space-y-2 sm:space-y-3">
               <h3 className="font-medium mb-2 sm:mb-3 text-sm sm:text-base">Investment Template Items</h3>
-              {centralInvestmentTemplate.items.map((item) => (
-                <div key={item.id} className="flex items-center justify-between p-2 sm:p-3 bg-gray-700 rounded-lg">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-medium text-sm sm:text-base truncate">{item.name}</p>
-                      <span className={`text-xs px-2 py-0.5 rounded ${
-                        item.investmentType === 'Self' ? 'bg-green-600 text-white' :
-                        item.investmentType === 'Combined' ? 'bg-purple-600 text-white' :
-                        'bg-gray-600 text-white'
-                      }`}>
-                        {item.investmentType || 'Self'}
-                      </span>
+              <ReorderableList items={centralInvestmentTemplate.items}
+                onReorder={items => onUpdateTemplate({ ...centralInvestmentTemplate, items, updatedAt: new Date() })}>
+                {centralInvestmentTemplate.items.map((item) => (
+                  <ReorderableRow key={item.id} id={item.id} label={item.name} className="flex items-center justify-between p-2 sm:p-3 bg-gray-700 rounded-lg">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-medium text-sm sm:text-base truncate">{item.name}</p>
+                        <span className={`text-xs px-2 py-0.5 rounded ${
+                          item.investmentType === 'Self' ? 'bg-green-600 text-white' :
+                          item.investmentType === 'Combined' ? 'bg-purple-600 text-white' :
+                          'bg-gray-600 text-white'
+                        }`}>
+                          {item.investmentType || 'Self'}
+                        </span>
+                      </div>
+                      <p className="text-gray-400 text-xs sm:text-sm truncate">{item.category}</p>
                     </div>
-                    <p className="text-gray-400 text-xs sm:text-sm truncate">{item.category}</p>
-                  </div>
-                  <div className="flex items-center gap-2 sm:gap-3 ml-2">
-                    <p className="text-blue-400 font-semibold text-sm sm:text-base">{formatINR(item.amount)}</p>
-                    <div className="flex gap-1">
-                      <button
-                        onClick={() => handleEdit(item)}
-                        className="p-1 hover:bg-gray-600 rounded text-gray-400 hover:text-white transition-colors"
-                      >
-                        <Edit2 className="w-3 h-3 sm:w-4 sm:h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(item.id)}
-                        className="p-1 hover:bg-gray-600 rounded text-gray-400 hover:text-red-400 transition-colors"
-                      >
-                        <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
-                      </button>
+                    <div className="flex items-center gap-2 sm:gap-3 ml-2">
+                      <p className="text-blue-400 font-semibold text-sm sm:text-base">{formatINR(item.amount)}</p>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => handleEdit(item)}
+                          className="p-1 hover:bg-gray-600 rounded text-gray-400 hover:text-white transition-colors"
+                        >
+                          <Edit2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(item.id)}
+                          className="p-1 hover:bg-gray-600 rounded text-gray-400 hover:text-red-400 transition-colors"
+                        >
+                          <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  </ReorderableRow>
+                ))}
+              </ReorderableList>
             </div>
           ) : (
             <div className="text-center text-gray-400 py-6 sm:py-8">

@@ -284,6 +284,15 @@ export async function createIncome(income: Omit<Income, 'id' | 'createdAt' | 'mo
   return result.data;
 }
 
+export async function reorderIncome(month: string, ids: string[]) {
+  const response = await fetch('/api/income', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ month, ids }),
+  });
+  if (!response.ok) throw new Error('Failed to save income order');
+}
+
 export async function deleteIncome(id: string) {
   const response = await fetch(`/api/income?id=${id}`, {
     method: 'DELETE',

@@ -840,6 +840,21 @@ export default function FinanceTracker() {
   };
 
   // Income handlers
+  const handleReorderIncome = async (items: Income[]) => {
+    const month = api.formatMonthForAPI(currentMonth);
+    if (loadingIncome || items.some(item => item.month.toISOString().slice(0, 7) !== month)) return;
+    setLoadingIncome(true);
+    setIncomes(items);
+    try {
+      await api.reorderIncome(month, items.map(item => item.id));
+    } catch {
+      setIncomes(current => current === items ? incomes : current);
+      showToast('Failed to save income order', 'warning');
+    } finally {
+      setLoadingIncome(false);
+    }
+  };
+
   const handleAddIncome = async (income: { source: string; amount: number }) => {
     try {
       setLoadingIncome(true);
@@ -1485,6 +1500,7 @@ export default function FinanceTracker() {
                   externalBuffers={externalBuffers}
                   totalExpenses={totalExpenses}
                   onAddIncome={handleAddIncome}
+                  onReorderIncome={handleReorderIncome}
                   onDeleteIncome={handleDeleteIncome}
                   onAddExternalBuffer={handleAddExternalBuffer}
                   onDeleteExternalBuffer={handleDeleteExternalBuffer}

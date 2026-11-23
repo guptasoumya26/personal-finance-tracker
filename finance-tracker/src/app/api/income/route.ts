@@ -20,6 +20,12 @@ export async function GET(request: NextRequest) {
       throw error;
     }
 
+    // New and previously unordered entries keep their newest-first order.
+    data.sort((a, b) => {
+      if (a.display_order == null) return b.display_order == null ? 0 : -1;
+      if (b.display_order == null) return 1;
+      return a.display_order - b.display_order;
+    });
     return NextResponse.json({ data });
   } catch (error) {
     if (error instanceof Error && error.message === 'Authentication required') {
@@ -64,6 +70,31 @@ export async function POST(request: NextRequest) {
       { error: 'Failed to create income' },
       { status: 500 }
     );
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const user = await requireAuth(request);
+    const { month, ids } = await request.json();
+    const uuid = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
+    if (typeof month !== 'string' || !/^\d{4}-(0[1-9]|1[0-2])$/.test(month) ||
+        !Array.isArray(ids) || ids.length < 2 || new Set(ids).size !== ids.length ||
+        !ids.every(id => typeof id === 'string' && uuid.test(id))) {
+      return NextResponse.json({ error: 'Invalid income order' }, { status: 400 });
+    }
+
+    const { error } = await supabaseAdmin.rpc('reorder_income', {
+      owner_id: user.id, target_month: month, ordered_ids: ids,
+    });
+    if (error) throw error;
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Authentication required') {
+      return createAuthErrorResponse(error, 401);
+    }
+    console.error('Error reordering income:', error);
+    return NextResponse.json({ error: 'Failed to save income order' }, { status: 500 });
   }
 }
 

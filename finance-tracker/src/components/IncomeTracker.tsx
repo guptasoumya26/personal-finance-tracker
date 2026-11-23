@@ -1,5 +1,6 @@
 'use client';
 
+import { ReorderableList, ReorderableRow } from './ReorderableList';
 import { useState } from 'react';
 import { Income, ExternalInvestmentBuffer } from '@/types';
 import { formatINR } from '@/utils/currency';
@@ -10,6 +11,7 @@ interface IncomeTrackerProps {
   externalBuffers: ExternalInvestmentBuffer[];
   totalExpenses: number;
   onAddIncome: (income: { source: string; amount: number }) => void;
+  onReorderIncome: (items: Income[]) => void;
   onDeleteIncome: (id: string) => void;
   onAddExternalBuffer: (buffer: { description: string; amount: number }) => void;
   onDeleteExternalBuffer: (id: string) => void;
@@ -22,6 +24,7 @@ export default function IncomeTracker({
   externalBuffers,
   totalExpenses,
   onAddIncome,
+  onReorderIncome,
   onDeleteIncome,
   onAddExternalBuffer,
   onDeleteExternalBuffer,
@@ -150,29 +153,34 @@ export default function IncomeTracker({
         {incomes.length === 0 ? (
           <p className="text-gray-400 text-center py-4">No income recorded this month</p>
         ) : (
-          incomes.map((income) => (
-            <div
-              key={income.id}
-              className="flex items-center justify-between p-3 bg-gray-700 rounded-lg hover:bg-gray-650 transition-colors"
-            >
-              <div className="flex-1">
-                <p className="text-white font-medium">{income.source}</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-green-400 font-semibold">
-                  {formatINR(income.amount)}
-                </span>
-                <button
-                  onClick={() => onDeleteIncome(income.id)}
-                  disabled={loading}
-                  className="p-1 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded transition-colors disabled:opacity-50"
-                  title="Delete income"
-                >
-                  <Trash2 size={18} />
-                </button>
-              </div>
-            </div>
-          ))
+          <ReorderableList items={incomes} onReorder={onReorderIncome}>
+            {incomes.map((income) => (
+              <ReorderableRow
+                key={income.id}
+                id={income.id}
+                label={income.source}
+                disabled={loading}
+                className="flex items-center justify-between p-3 bg-gray-700 rounded-lg hover:bg-gray-650 transition-colors"
+              >
+                <div className="flex-1">
+                  <p className="text-white font-medium">{income.source}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-green-400 font-semibold">
+                    {formatINR(income.amount)}
+                  </span>
+                  <button
+                    onClick={() => onDeleteIncome(income.id)}
+                    disabled={loading}
+                    className="p-1 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded transition-colors disabled:opacity-50"
+                    title="Delete income"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              </ReorderableRow>
+            ))}
+          </ReorderableList>
         )}
       </div>
 
